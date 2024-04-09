@@ -5,8 +5,8 @@
 ### Dataset
 We used LLMD-FULL from [Lakh MIDI Dataset v0.1](https://colinraffel.com/projects/lmd/). The compressed file name is [lmd_full.tar.gz](). extract the file under **data/**.
 ```
-wget **link**
-tar -zxvf **filename.tar.gz**
+>wget **link**
+>tar -zxvf **filename.tar.gz**
 ```
 
 ### Virtual Environment
@@ -46,7 +46,9 @@ not in
 EnsembleEmbedders/src/
 ```
 ### Dependencies
-prettymidi
-tensorflow
+```
+prettymidi ==
+tensorflow ==
+```
 
 ### Acknowledgement
