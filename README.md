@@ -2,6 +2,9 @@
 
 ## CSCI 2470 Final Project
 
+### Dataset
+We used LLMD-FULL from [Lakh MIDI Dataset v0.1]{https://colinraffel.com/projects/lmd/}. The compressed file name is [lmd_full.tar.gz]
+
 ### Virtual Environment
 Make sure to make a python virtual environment
 
