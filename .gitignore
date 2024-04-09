@@ -1,3 +1,4 @@
 .venv
 lyricsMIDIS
 vocab
+data/*
