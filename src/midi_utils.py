@@ -17,8 +17,8 @@ def num2class(n):
 def num2name(n):
     return pm.program_to_instrument_name(n)
 
-def get_midi(data):
-    return None
+def name2num(name):
+    return pm.instrument_name_to_program(name)
 
 def get_melody_instr(midi, verbose=False):        
     for instr_class in MELODY_INSTRUMENT_RANKING:
@@ -138,9 +138,40 @@ def get_data_from_midi(midi_path, verbose=False):
     
     return melody_lyrics_array
 
+def get_midi_from_data(melody_lyrics_array, tempo, verbose=True):
+    midi = pm.PrettyMIDI()
+    # Synthesize all melodies with a piano
+    piano_num = name2num('Acoustic Grand Piano')
+    melody_instrument = pm.Instrument(program=piano_num)
+
+    # Separate the lyrics and melody roll
+    lyrics_roll = melody_lyrics_array[-1, :]
+    melody_roll = melody_lyrics_array[:-1, :]
+
+    # Compute the length of a beat using the given tempo
+    mins_per_beat = 1 / tempo
+    secs_per_16th_beat = mins_per_beat * (60 / 16)
+
+    # TODO: Add melody back into the midi
+    # for column in lyrics_roll.shape[1]:
+    #     # Compute the proper time
+    #     note_time = 
+    #     for row in lyrics_roll.shape[0]:
+
+    # Add the lyrics into the midi
+    for index, lyric in enumerate(lyrics_roll):
+        lyric_time = index * secs_per_16th_beat
+        midi.lyrics.append(pm.Lyric(lyric, lyric_time))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, default="data/Dancing Queen.mid", help="path to midi.")
     parser.add_argument("-v", "--verbose", type=bool, default=False, help="whether or not to print progress messages.")
     options = parser.parse_args()
+
+    # Extract training data from midi file
     melody_lyrics_array = get_data_from_midi(options.input, verbose=True)
+
+    # Try reconstructing a midi file from the extracted data
+    midi_reconstructed = get_midi_from_data(melody_lyrics_array, tempo=120, verbose=True)
