@@ -48,6 +48,20 @@ def get_melody_instr(midi, verbose=False):
         print()
     return melody_instrument
 
+def get_tempo(midi, verbose=False):
+    # Get all tempo changes throughout the song
+    times, tempos = midi.get_tempo_changes()
+    if verbose:
+        print("Extracted {} tempos".format(len(tempos)))
+
+    # Simply use the first tempo as the tempo for the whole song, ignore changes
+    tempo = tempos[0]
+    if verbose:
+        print("using first tempo: {} BPM".format(tempo))
+        print()
+    return tempo
+
+
 def get_bass_instr(midi, verbose=False):
     for instr_class in BASS_INSTRUMENT_RANKING:
         # Find list of instruments matching each class
@@ -73,32 +87,60 @@ def get_bass_instr(midi, verbose=False):
 
     if verbose:
         print("using bass instrument: {}".format(num2name(bass_instrument.program)))
+        print()
     return bass_instrument
 
-def get_data(midi_path, verbose=False):
+def get_data_from_midi(midi_path, verbose=False):
     if verbose:
         print("Extracting data from midi file: {}".format(midi_path))
         print()
     midi = pm.PrettyMIDI(midi_path)
     melody_instr = get_melody_instr(midi, verbose=verbose)
-    bass_instr = get_bass_instr(midi, verbose=verbose)
+    # bass_instr = get_bass_instr(midi, verbose=verbose)
+
+    # Extract the tempo so we can sample piano roll
+    #   by beats instead of seconds.
+    # We will sample by 16th notes, so that every
+    #   column represents a 16th note.
+    BPM = get_tempo(midi, verbose=verbose)
+
+    # In get_piano_roll, columns are spaced apart by 1./fs
+    #   We want them to be spaced by 1/16th of a beat
+    MPB = 1 / BPM # minutes per beat
+    SPB = 60 * MPB # seconds per beat
+    sample_length = SPB / 16 # seconds per 16th of a beat
+    sampling_rate = 1 / sample_length
     
-    melody_roll = melody_instr.get_piano_roll()
-    bass_roll = bass_instr.get_piano_roll()
-    lyrics = midi.lyrics
+    melody_roll = melody_instr.get_piano_roll(fs=sampling_rate)
+    # bass_roll = bass_instr.get_piano_roll(fs=sampling_rate)
+    if verbose:
+        print("Shape of tensors: {}".format(melody_roll.shape))
 
-    # To integrate with Evan's stuff:
-    # melody_roll = quantize(melody_roll)
-    # lyrics = quantize(lyrics)
+    # Get the lyrics and associate them to nearest 1/16th note
+    lyrics_roll = list(np.zeros(melody_roll.shape[1], dtype=str)) # single row along time axis
+    for lyric in midi.lyrics:
+        # Remove unnecessary characters and whitespace
+        lyric_text = lyric.text.lower()
+        lyric_text = lyric_text.replace('\n', '')
+        lyric_text = lyric_text.replace('\r', '')
+        lyric_text = lyric_text.replace('\t', '')
+        lyric_text = lyric_text.strip()
+        lyric_text = lyric_text.strip('.,-_')
+        if lyric_text == "":
+            continue
+        # Compute closest index into 1/16th note columns
+        best_index = int(np.floor(lyric.time / sample_length))
+        lyrics_roll[best_index] = lyric_text
 
-    return melody_roll, bass_roll, lyrics
+    # Combine the melody_roll with the lyrics_roll
+    lyrics_roll = np.array(lyrics_roll).reshape(1, melody_roll.shape[1])
+    melody_lyrics_array = np.concatenate([melody_roll, lyrics_roll], axis=0)
+    
+    return melody_lyrics_array
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type = str, default = "data/", help="path to the data folder containing midis.")
-    parser.add_argument("--example", type = str, default = "data/Dancing Queen.mid", help="path to one midi.")
+    parser.add_argument("-i", "--input", type=str, default="data/Dancing Queen.mid", help="path to midi.")
+    parser.add_argument("-v", "--verbose", type=bool, default=False, help="whether or not to print progress messages.")
     options = parser.parse_args()
-    melody_roll, bass_roll, lyrics = get_data(options.example, verbose=True)
-    # print(roll.shape)
-    # print()
-    # print(lyrics)
+    melody_lyrics_array = get_data_from_midi(options.input, verbose=True)
