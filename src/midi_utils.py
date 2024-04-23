@@ -144,7 +144,7 @@ def get_data_from_midi(midi_path, verbose=False):
     
     return melody_roll
 
-def get_midi_from_data(melody_lyrics_array, tempo, verbose=True):
+def get_midi_from_data(melody_lyrics_array, tempo, verbose=False):
     if verbose:
         print('Creating MIDI from tensor of shape {}'.format(melody_lyrics_array.shape))
     midi = pm.PrettyMIDI()
@@ -185,6 +185,10 @@ def get_midi_from_data(melody_lyrics_array, tempo, verbose=True):
             # if verbose:
             #     print('ending note at time: {}'.format(note_end))
             #     print()
+
+            # Clip note_vel to the valid range in [0, 127]
+            note_vel = np.clip(note_vel, 0, 127)
+
             note = pm.Note(note_vel, note_pitch, note_start, note_end)
             melody_instrument.notes.append(note)
 
