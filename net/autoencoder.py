@@ -1,5 +1,4 @@
 import tensorflow as tf
-from src.midi_utils import get_data
 
 class Autoencoder(tf.keras.Model):
     def __init__(self, epochs = 100, instrument_units = 5, timestamp_fq = 1 / 100, pitch_units = 128):
@@ -41,17 +40,20 @@ class LossAccuracyCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         if epoch % 10 == 0:
             print("\nEpoch {} - Loss: {:.4f}".format(epoch, logs['loss']))
+            
 if __name__ == "__main__":
-    data = get_data()
-    autoencoder = Autoencoder()
-    autoencoder.compile(
-        optimizer = autoencoder.optimizer,
-        loss = autoencoder.loss
-    )
-    autoencoder.fit(data, data, 
-                          epochs=autoencoder.epochs, 
-                          batch_size=32, 
-                          validation_split=0.2,
-                          callbacks=[LossAccuracyCallback()])
-    loss = autoencoder.evaluate(data, data)
-    reconstructed_songs = autoencoder.predict(data)
+    print("executing autoencoder.py..")
+    # data = get_data()
+    # autoencoder = Autoencoder()
+    # autoencoder.compile(
+    #     optimizer = autoencoder.optimizer,
+    #     loss = autoencoder.loss
+    # )
+    # autoencoder.fit(data, data, 
+    #                       epochs=autoencoder.epochs, 
+    #                       batch_size=32, 
+    #                       validation_split=0.2,
+    #                       callbacks=[LossAccuracyCallback()])
+    # loss = autoencoder.evaluate(data, data)
+    # reconstructed_songs = autoencoder.predict(data)
+    

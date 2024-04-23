@@ -8,7 +8,7 @@ We used LLMD-FULL from [Lakh MIDI Dataset v0.1](https://colinraffel.com/projects
 >wget **link**
 >tar -zxvf **filename.tar.gz**
 ```
-
+We have filtered midi files to contain lyrics, and split the latter into four sections. You can download our dataset called [LyricalLakh.zip](#)
 ### Virtual Environment
 Make sure to make a python virtual environment
 ```
@@ -48,7 +48,8 @@ EnsembleEmbedders/src/
 ### Dependencies
 ```
 prettymidi ==
-tensorflow ==
+tensorflow == 2.16.1
+joblib == 1.4.0
 ```
 
 ### Acknowledgement

@@ -5,3 +5,6 @@ test.py
 **/.DS_Store
 **/lmd_full
 **/*.mid
+__pycache__/
+net/__pycache__/
+src/__pycache__/
