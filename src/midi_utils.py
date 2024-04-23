@@ -1,6 +1,7 @@
 import pretty_midi as pm
 import numpy as np
 import argparse
+import sys
 
 # For melody, base, and drums--rank instruments in order of likelihood
 # See all 128 MIDI instruments here--https://en.wikipedia.org/wiki/General_MIDI
@@ -112,59 +113,94 @@ def get_data_from_midi(midi_path, verbose=False):
     sampling_rate = 1 / sample_length
     
     melody_roll = melody_instr.get_piano_roll(fs=sampling_rate)
+
+    # Convert to int
+    melody_roll = melody_roll.astype(int)
+
     # bass_roll = bass_instr.get_piano_roll(fs=sampling_rate)
     if verbose:
-        print("Shape of tensors: {}".format(melody_roll.shape))
+        print("Shape of final tensors: {}".format(melody_roll.shape))
+        print()
 
-    # Get the lyrics and associate them to nearest 1/16th note
-    lyrics_roll = list(np.zeros(melody_roll.shape[1], dtype=str)) # single row along time axis
-    for lyric in midi.lyrics:
-        # Remove unnecessary characters and whitespace
-        lyric_text = lyric.text.lower()
-        lyric_text = lyric_text.replace('\n', '')
-        lyric_text = lyric_text.replace('\r', '')
-        lyric_text = lyric_text.replace('\t', '')
-        lyric_text = lyric_text.strip()
-        lyric_text = lyric_text.strip('.,-_')
-        if lyric_text == "":
-            continue
-        # Compute closest index into 1/16th note columns
-        best_index = int(np.floor(lyric.time / sample_length))
-        lyrics_roll[best_index] = lyric_text
+    # # Get the lyrics and associate them to nearest 1/16th note
+    # lyrics_roll = list(np.zeros(melody_roll.shape[1], dtype=str)) # single row along time axis
+    # for lyric in midi.lyrics:
+    #     # Remove unnecessary characters and whitespace
+    #     lyric_text = lyric.text.lower()
+    #     lyric_text = lyric_text.replace('\n', '')
+    #     lyric_text = lyric_text.replace('\r', '')
+    #     lyric_text = lyric_text.replace('\t', '')
+    #     lyric_text = lyric_text.strip()
+    #     lyric_text = lyric_text.strip('.,-_')
+    #     if lyric_text == "":
+    #         continue
+    #     # Compute closest index into 1/16th note columns
+    #     best_index = int(np.floor(lyric.time / sample_length))
+    #     lyrics_roll[best_index] = lyric_text
 
-    # Combine the melody_roll with the lyrics_roll
-    lyrics_roll = np.array(lyrics_roll).reshape(1, melody_roll.shape[1])
-    melody_lyrics_array = np.concatenate([melody_roll, lyrics_roll], axis=0)
+    # # Combine the melody_roll with the lyrics_roll
+    # lyrics_roll = np.array(lyrics_roll).reshape(1, melody_roll.shape[1])
+    # melody_lyrics_array = np.concatenate([melody_roll, lyrics_roll], axis=0)
     
-    return melody_lyrics_array
+    return melody_roll
 
 def get_midi_from_data(melody_lyrics_array, tempo, verbose=True):
+    if verbose:
+        print('Creating MIDI from tensor of shape {}'.format(melody_lyrics_array.shape))
     midi = pm.PrettyMIDI()
     # Synthesize all melodies with a piano
     piano_num = name2num('Acoustic Grand Piano')
     melody_instrument = pm.Instrument(program=piano_num)
 
-    # Separate the lyrics and melody roll
-    lyrics_roll = melody_lyrics_array[-1, :]
-    melody_roll = melody_lyrics_array[:-1, :]
+    # # Separate the lyrics and melody roll
+    # lyrics_roll = melody_lyrics_array[-1, :]
+    # melody_roll = melody_lyrics_array[:-1, :]
+    melody_roll = melody_lyrics_array
 
     # Compute the length of a beat using the given tempo
     mins_per_beat = 1 / tempo
     secs_per_16th_beat = mins_per_beat * (60 / 16)
 
     # TODO: Add melody back into the midi
-    # for column in lyrics_roll.shape[1]:
-    #     # Compute the proper time
-    #     note_time = 
-    #     for row in lyrics_roll.shape[0]:
+    for row in range(melody_roll.shape[0]):
+        # Compute the pitch
+        note_pitch = row
+        col = 0
+        if verbose:
+            print('Processing note number/row: {}'.format(row))
+        # For each timestep
+        while col < melody_roll.shape[1]:
+            note_vel = melody_roll[row, col]
+            # If there is no note...
+            if note_vel == 0:
+                col += 1
+                continue
+            # Otherwise...
+            note_start = col * secs_per_16th_beat
+            # if verbose:
+            #     print('Found note with velocity {} at start time: {}'.format(note_vel, note_start))
+            while col < melody_roll.shape[1] and melody_roll[row, col] == note_vel:
+                col += 1
+            note_end = col * secs_per_16th_beat
+            # if verbose:
+            #     print('ending note at time: {}'.format(note_end))
+            #     print()
+            note = pm.Note(note_vel, note_pitch, note_start, note_end)
+            melody_instrument.notes.append(note)
 
     # Add the lyrics into the midi
-    for index, lyric in enumerate(lyrics_roll):
-        lyric_time = index * secs_per_16th_beat
-        midi.lyrics.append(pm.Lyric(lyric, lyric_time))
+    # for index, lyric in enumerate(lyrics_roll):
+    #     lyric_time = index * secs_per_16th_beat
+    #     midi.lyrics.append(pm.Lyric(lyric, lyric_time))
+    
+    midi.instruments.append(melody_instrument)
+
+    return midi
 
 
 if __name__ == "__main__":
+    np.set_printoptions(threshold=sys.maxsize)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, default="data/Dancing Queen.mid", help="path to midi.")
     parser.add_argument("-v", "--verbose", type=bool, default=False, help="whether or not to print progress messages.")
@@ -174,4 +210,7 @@ if __name__ == "__main__":
     melody_lyrics_array = get_data_from_midi(options.input, verbose=True)
 
     # Try reconstructing a midi file from the extracted data
-    midi_reconstructed = get_midi_from_data(melody_lyrics_array, tempo=120, verbose=True)
+    midi_reconstructed = get_midi_from_data(melody_lyrics_array, tempo=240, verbose=True)
+
+    # Write to MIDI file
+    midi_reconstructed.write('dancing-queen-reconstructed-1.mid')
