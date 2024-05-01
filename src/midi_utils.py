@@ -26,27 +26,31 @@ def get_melody_instr(midi, verbose=False):
         # Find list of instruments matching each class
         melody_instruments = [instr for instr in midi.instruments if num2class(instr.program) == instr_class]
 
-        # If we found any instruments, break
-        if len(melody_instruments) > 0:
-            break
+        # # If we found any instruments, break
+        # if len(melody_instruments) > 0:
+        #     break
     
-    if (verbose):
-        print('Extracted {} candidate melody instruments of class {}:'.format(len(melody_instruments), instr_class))
-        print([num2name(instr.program) for instr in melody_instruments])
+        # if (verbose):
+        #     print('Extracted {} candidate melody instruments of class {}:'.format(len(melody_instruments), instr_class))
+        #     print([num2name(instr.program) for instr in melody_instruments])
 
-    # From the list of instruments that matched, take the one with the most notes
-    melody_instrument = melody_instruments[0]
-    max_num_notes = -1
-    for instr in melody_instruments:
-        notes = instr.notes
-        num_notes = len(notes)
-        if num_notes > max_num_notes:
-            max_num_notes = num_notes
-            melody_instrument = instr
+        # From the list of instruments that matched, take the one with the largest sum of piano roll
+        if len(melody_instruments) == 0:
+            continue
+        melody_instrument = melody_instruments[0]
+        max_piano_roll_sum = -1
+        for instr in melody_instruments:
+            piano_roll_sum = np.sum(instr.get_piano_roll())
+            if piano_roll_sum > max_piano_roll_sum:
+                max_piano_roll_sum = piano_roll_sum
+                melody_instrument = instr
+        if max_piano_roll_sum > 0:
+            break
 
     if verbose:
         print("using melody instrument: {}".format(num2name(melody_instrument.program)))
         print()
+
     return melody_instrument
 
 def get_tempo(midi, verbose=False):
@@ -63,33 +67,33 @@ def get_tempo(midi, verbose=False):
     return tempo
 
 
-def get_bass_instr(midi, verbose=False):
-    for instr_class in BASS_INSTRUMENT_RANKING:
-        # Find list of instruments matching each class
-        bass_instruments = [instr for instr in midi.instruments if num2class(instr.program) == instr_class]
+# def get_bass_instr(midi, verbose=False):
+#     for instr_class in BASS_INSTRUMENT_RANKING:
+#         # Find list of instruments matching each class
+#         bass_instruments = [instr for instr in midi.instruments if num2class(instr.program) == instr_class]
 
-        # If we found any instruments, break
-        if len(bass_instruments) > 0:
-            break
+#         # If we found any instruments, break
+#         if len(bass_instruments) > 0:
+#             break
 
-    if (verbose):
-        print('Extracted {} candidate bass instruments of class {}:'.format(len(bass_instruments), instr_class))
-        print([num2name(instr.program) for instr in bass_instruments])
+#     if (verbose):
+#         print('Extracted {} candidate bass instruments of class {}:'.format(len(bass_instruments), instr_class))
+#         print([num2name(instr.program) for instr in bass_instruments])
 
-    # From the list of instruments that matched, take the one with the most notes
-    bass_instrument = bass_instruments[0]
-    max_num_notes = -1
-    for instr in bass_instruments:
-        notes = instr.notes
-        num_notes = len(notes)
-        if num_notes > max_num_notes:
-            max_num_notes = num_notes
-            bass_instrument = instr
+#     # From the list of instruments that matched, take the one with the most notes
+#     bass_instrument = bass_instruments[0]
+#     max_num_notes = -1
+#     for instr in bass_instruments:
+#         notes = instr.notes
+#         num_notes = len(notes)
+#         if num_notes > max_num_notes:
+#             max_num_notes = num_notes
+#             bass_instrument = instr
 
-    if verbose:
-        print("using bass instrument: {}".format(num2name(bass_instrument.program)))
-        print()
-    return bass_instrument
+#     if verbose:
+#         print("using bass instrument: {}".format(num2name(bass_instrument.program)))
+#         print()
+#     return bass_instrument
 
 def get_data_from_midi(midi_path, verbose=False):
     if verbose:

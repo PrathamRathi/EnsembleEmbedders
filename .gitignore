@@ -1,6 +1,7 @@
 .venv
 vocab
 data/*
+preprocessed/*
 test.py
 **/.DS_Store
 **/lmd_full
