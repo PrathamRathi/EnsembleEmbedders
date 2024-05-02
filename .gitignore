@@ -2,7 +2,6 @@
 vocab
 data/
 preprocessed/
-test.py
 log/
 **/.DS_Store
 **/lmd_full
