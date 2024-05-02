@@ -1,54 +1,59 @@
 import tensorflow as tf
 
 class Autoencoder(tf.keras.Model):
-    def __init__(self, epochs = 10, instrument_units = 3, pitch_units = 128, song_length = 20000):
+    def __init__(self, epochs, instrument_units, pitch_units, song_length, learning_rate):
         super(Autoencoder, self).__init__()
+
         self.epochs = epochs
         self.instrument_units = instrument_units
         self.pitch_units = pitch_units
         self.song_length = song_length
 
         self.loss = tf.keras.losses.MeanSquaredError
-        self.optimizer = tf.keras.optimizers.Adam(1e-5)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate)
 
         input_shape = (self.instrument_units, self.pitch_units, self.song_length)
+        flattened_dim = self.pitch_units * self.song_length * self.instrument_units
         if (instrument_units == 1):
             input_shape = (self.pitch_units, self.song_length)
-        flattened_dim = self.pitch_units * self.song_length
+            flattened_dim = self.pitch_units * self.song_length
+
         self.encoder = tf.keras.Sequential([
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(flattened_dim // 2),
+            tf.keras.layers.Dense(256),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.Dense(flattened_dim // 4),
+            tf.keras.layers.Dense(128),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.Dense(flattened_dim // 8),
+            tf.keras.layers.Dense(64),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.Dense(flattened_dim // 16),
+            tf.keras.layers.Dense(32),
             tf.keras.layers.LeakyReLU(),
         ])
         
         self.decoder = tf.keras.Sequential([
-            tf.keras.layers.Dense(flattened_dim // 16),
+            tf.keras.layers.Dense(32),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.Dense(flattened_dim // 8),
+            tf.keras.layers.Dense(64),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.Dense(flattened_dim // 4),
+            tf.keras.layers.Dense(128),
             tf.keras.layers.LeakyReLU(),
-            tf.keras.layers.Dense(flattened_dim // 2),
+            tf.keras.layers.Dense(256),
             tf.keras.layers.LeakyReLU(),
             tf.keras.layers.Dense(flattened_dim),
             tf.keras.layers.Reshape(input_shape)
         ])
 
-    def call(self, x):
-        # for i, layer in enumerate(self.encoder.layers):
-        #     x = layer(x)
-            # print("encoder layer: ", layer, "output dim", x.shape)
-        # for i, layer in enumerate(self.decoder.layers):
-        #     x = layer(x)
-            # print("decoder layer: ", layer, "output dim", x.shape)
-        x = self.encoder(x)
-        x = self.decoder(x)
+    def call(self, x, verbose = False):
+        if (verbose):
+            for i, layer in enumerate(self.encoder.layers):
+                x = layer(x)
+                print("encoder layer: ", layer, "output dim", x.shape)
+            for i, layer in enumerate(self.decoder.layers):
+                x = layer(x)
+                print("decoder layer: ", layer, "output dim", x.shape)
+        else:
+            x = self.encoder(x)
+            x = self.decoder(x)
         return x
 
 class LossAccuracyCallback(tf.keras.callbacks.Callback):

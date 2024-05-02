@@ -4,11 +4,21 @@ from net.autoencoder import Autoencoder, LossAccuracyCallback
 import numpy as np
 import tensorflow as tf
 import os
+import argparse
 
 # data_path = 'data/data/lyricsMidisP0'
-data_path = 'data/lyricsMidisP0'
+data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
+preprocessed_folder_path = "preprocessed/"
 preprocessed_path = 'preprocessed/all_chunks' # all_chunks is the filename of the .npy
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-e", type=int, required = True, help = "epochs")
+    parser.add_argument("-lr", type=float, required = True, help = "learning rate")
+    parser.add_argument("-n", type=int, help = "number of midis if processing needed")
+    parser.add_argument("-p", type=str, required = True, help = "preprocessed file path", default= "default")
+    return parser.parse_args()
 
 def preprocess(data_path, preprocessed_path, num_files, verbose=False):
     '''
@@ -18,6 +28,7 @@ def preprocess(data_path, preprocessed_path, num_files, verbose=False):
     Output is a .npy with shape=
         [num_samples, 128 pitches, 256 columns (4 bars of a song)]
     '''
+    
     midis = get_midi_paths(data_path, depth=2)
     midis = midis[0][:num_files] # data is split into 5 sections, pick the first one.
     print('Preprocessing {} total files.'.format(len(midis)))
@@ -27,7 +38,8 @@ def preprocess(data_path, preprocessed_path, num_files, verbose=False):
     for i in range(len(midis)):
         try:
             # Get data from midi
-            print('Processing file {}.'.format(i))
+            if (verbose):
+                print('Processing file(s) {}.'.format(i))
             melody_array = get_data_from_midi(midis[i], verbose=verbose)
 
             # Make all velocities 0 or 1
@@ -55,11 +67,10 @@ def preprocess(data_path, preprocessed_path, num_files, verbose=False):
         
     print("Shape of all_chunks: {}".format(all_chunks.shape))
         
-    # Create the output directory if it doesn't exist yet
+    # Create the output directory if it doesn’t exist yet
     if not os.path.exists(os.path.dirname(preprocessed_path)):
         os.makedirs(os.path.dirname(preprocessed_path))
-
-    # Write out all chunks to file
+        
     np.save(preprocessed_path, all_chunks)
     print("Saved preprocessing output to {}".format(preprocessed_path))
 
@@ -67,25 +78,41 @@ def preprocess(data_path, preprocessed_path, num_files, verbose=False):
 if __name__ == "__main__":
     # Preprocess data and write output file as .npy
     #   Comment this line if using cached preprocessed files!
-    preprocess(data_path, preprocessed_path, num_files=50)
+    args = parse_arguments()
+    if (args.p != "default"):
+        preprocessed_path = preprocessed_folder_path + args.p + ".npy"
+    else:
+        preprocessed_path = preprocessed_path + "_" + str(args.n) + ".npy"
+
+    #if file already exists
+    if (not os.path.exists(preprocessed_path)):
+        preprocess(data_path, preprocessed_path, num_files=args.n)
 
     # Load data from .npy and train
-    data = np.load(preprocessed_path + ".npy")
+    data = np.load(preprocessed_path)
     x_train = tf.constant(data)
-    print("Loading preprocessed data from file. Shape: {}".format(x_train.shape))
+    print(f"Loading preprocessed data from file {preprocessed_path}. Shape: {x_train.shape}")
 
-    model = Autoencoder(song_length=256, # 256 columns = 4 bars
-                        instrument_units= 1,
-                        pitch_units=128
+    instrument_units = 3
+    pitch_units = 12
+    song_length = 160
+    model = Autoencoder(song_length= song_length,
+                        instrument_units= instrument_units,
+                        pitch_units= pitch_units,
+                        epochs = args.e,
+                        learning_rate= args.lr
     )
     model.compile(
         optimizer = model.optimizer,
         loss = model.loss
     )
+
     model.fit(x_train, 
               x_train,
               epochs = model.epochs,
-              batch_size = 2,
-            #   validation_split = 0.2,
+              batch_size = 32 if model.epochs > 300 else 10,
+              validation_split = 0.2,
             #   callbacks = [LossAccuracyCallback()]
     )
+    model.save("saved_model/default.keras")
+    model.summary()
