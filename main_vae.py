@@ -14,10 +14,10 @@ preprocessed_path = 'preprocessed/all_chunks' # all_chunks is the filename of th
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", type=int, required = True, help = "epochs")
+    parser.add_argument("-epochs", type=int, required = True, help = "epochs")
     parser.add_argument("-lr", type=float, required = True, help = "learning rate")
     parser.add_argument("-n", type=int, help = "number of midis if processing needed")
-    parser.add_argument("-p", type=str, required = True, help = "preprocessed file path", default= "default")
+    parser.add_argument("-file", type=str, required = True, help = "preprocessed file path", default= "default")
     return parser.parse_args()
 
 def preprocess(data_path, preprocessed_path, num_files, verbose=False):
@@ -79,10 +79,10 @@ if __name__ == "__main__":
     # Preprocess data and write output file as .npy
     #   Comment this line if using cached preprocessed files!
     args = parse_arguments()
-    if (args.p != "default"):
-        preprocessed_path = preprocessed_folder_path + args.p + ".npy"
+    if (args.file != "default"):
+        preprocessed_path = preprocessed_folder_path + args.file
     else:
-        preprocessed_path = preprocessed_path + "_" + str(args.n) + ".npy"
+        preprocessed_path = preprocessed_path + "_" + str(args.n)
 
     #if file already exists
     if (not os.path.exists(preprocessed_path)):
@@ -100,7 +100,7 @@ if __name__ == "__main__":
                         instrument_units= instrument_units,
                         pitch_units= pitch_units,
                         learning_rate= args.lr,
-                        epochs=args.e,
+                        epochs=args.epochs,
                         hidden_dim=512,latent_size=32
                         )
     model.compile(
