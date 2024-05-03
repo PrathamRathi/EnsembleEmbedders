@@ -2,12 +2,12 @@ import tensorflow as tf
 import numpy as np
 from src.midi_preprocess import get_midi_paths 
 from src.midi_utils import get_data_from_midi, get_midi_from_data
+from src.chroma_rolls_preprocessor import get_chroma_from_midi, get_midi_from_chroma
 from net.variational_autoencoder import VAE
 import numpy as np
 import tensorflow as tf
 import os
 import argparse
-
 
 def hw_interpolate(latent_size, steps):
     S = steps
@@ -44,16 +44,16 @@ def interpolate(model, latent_size, steps):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", type=int, required = True, help = "0 for 128 pitches, 1 for 12")
+    parser.add_argument("-f", type=str, required = True, help = "pitches or chroma", default="chroma")
     parser.add_argument("-model", type=str, required = True, help = "model file name", default= "vae-defaul.keras")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_arguments()
-    if (args.f == 0):
-        processing = get_midi_from_data_eric
-    elif (args.f == 1):
-        processing = get_midi_from_data_evan
+    if (args.f == "pitches"):
+        processing = get_data_from_midi
+    elif (args.f == "chroma"):
+        processing = get_chroma_from_midi
     
     model_path = "saved_model/" + args.model
     model = tf.keras.models.load_model(model_path)
@@ -62,4 +62,5 @@ if __name__ == "__main__":
     test_midi_file = 'data/data/Dancing Queen.mid'
     test_midi_processed = processing(test_midi_file)
     model_midi_processed = model.predict(test_midi_processed)
-    reconstructed_midi = get_midi_from_data(model_midi_processed)
+    reconstructed_midi = get_midi_from_chroma(model_midi_processed)
+    reconstructed_midi.write('model-reconstruction.mid')
