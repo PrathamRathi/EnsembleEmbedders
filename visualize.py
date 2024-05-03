@@ -44,23 +44,26 @@ def interpolate(model, latent_size, steps):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", type=str, required = True, help = "pitches or chroma", default="chroma")
-    parser.add_argument("-model", type=str, required = True, help = "model file name", default= "vae-defaul.keras")
+    parser.add_argument("-f", type=str, help = "pitches or chroma", default="chroma")
+    parser.add_argument("-model", type=str, help = "model file name", default= "default.keras")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_arguments()
-    if (args.f == "pitches"):
-        processing = get_data_from_midi
-    elif (args.f == "chroma"):
-        processing = get_chroma_from_midi
+    # if (args.f == "pitches"):
+    #     processing = get_data_from_midi
+    # elif (args.f == "chroma"):
+    #     processing = get_chroma_from_midi
     
     model_path = "saved_model/" + args.model
     model = tf.keras.models.load_model(model_path)
+    model.build(input_shape = (1,3, 12, 160))
     model.summary()
     test_midi_file = "data/data/lyricsMidisP0/" 
-    test_midi_file = 'data/data/Dancing Queen.mid'
-    test_midi_processed = processing(test_midi_file)
+    test_midi_file = 'data/Dancing Queen.mid'
+    test_midi_processed = get_chroma_from_midi(test_midi_file)
+    test_midi_processed = np.expand_dims(test_midi_processed, 0)
+    print(test_midi_processed.shape)
     model_midi_processed = model.predict(test_midi_processed)
-    reconstructed_midi = get_midi_from_chroma(model_midi_processed)
+    reconstructed_midi = get_midi_from_chroma(model_midi_processed, tempo=120)
     reconstructed_midi.write('model-reconstruction.mid')

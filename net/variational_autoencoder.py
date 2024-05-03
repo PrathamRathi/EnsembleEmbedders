@@ -32,7 +32,7 @@ class VAE(tf.keras.Model):
             tf.keras.layers.Dense(flattened_dim, activation='sigmoid'),
             tf.keras.layers.Reshape(input_shape)
         ])
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
         self.loss_tracker = tf.keras.metrics.Mean(name='loss')
 
     def call(self, x):

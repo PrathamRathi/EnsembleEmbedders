@@ -1,7 +1,10 @@
 import numpy as np
 import pretty_midi as pm
 from time import sleep
-from midi_utils import name2num
+
+
+def name2num(name):
+    return pm.instrument_name_to_program(name)
 
 def get_chroma_from_midi(midi_path, verbose=False):
     if verbose:

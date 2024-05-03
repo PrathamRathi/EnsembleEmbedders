@@ -92,7 +92,7 @@ if __name__ == "__main__":
     data = np.load(preprocessed_path)
     x_train = tf.constant(data)
     print(f"Loading preprocessed data from file {preprocessed_path}. Shape: {x_train.shape}")
-
+    
     instrument_units = 3
     pitch_units = 12
     song_length = 160
@@ -106,7 +106,8 @@ if __name__ == "__main__":
     model.compile(
         optimizer = model.optimizer,
     )
-
+    model.build(input_shape = (1,3, 12, 160))
+    model.summary()
     model.fit(x_train, 
               x_train,
                 epochs=model.epochs,
@@ -114,5 +115,5 @@ if __name__ == "__main__":
               validation_split = 0.2,
             #   callbacks = [LossAccuracyCallback()]
     )
-    model.save("saved_model/default.keras")
-    model.summary()
+    print('Saving model')
+    model.save("saved_model/vae-default.keras")
