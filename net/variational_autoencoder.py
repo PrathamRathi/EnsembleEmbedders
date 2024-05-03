@@ -2,12 +2,21 @@ import tensorflow as tf
 
 
 class VAE(tf.keras.Model):
-    def __init__(self, input_size, output_size, hidden_dim=256,latent_size=15):
+    def __init__(self, instrument_units, pitch_units, song_length, learning_rate, hidden_dim=256,latent_size=15, epochs=1):
         super(VAE, self).__init__()
-        self.input_size = input_size  # H*W
+        self.epochs = epochs
         self.latent_size = latent_size  # Z
         self.hidden_dim = hidden_dim  # H_d
-        self.output_size = output_size
+        self.instrument_units = instrument_units
+        self.pitch_units = pitch_units
+        self.song_length = song_length
+
+        input_shape = (self.instrument_units, self.pitch_units, self.song_length)
+        flattened_dim = self.pitch_units * self.song_length * self.instrument_units
+        if (instrument_units == 1):
+            self.input_shape = (self.pitch_units, self.song_length)
+            flattened_dim = self.pitch_units * self.song_length
+
         self.encoder = tf.keras.Sequential([
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
@@ -20,10 +29,11 @@ class VAE(tf.keras.Model):
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
-            tf.keras.layers.Dense(self.input_size, activation='sigmoid'),
-            tf.keras.layers.Reshape(output_size)
+            tf.keras.layers.Dense(flattened_dim, activation='sigmoid'),
+            tf.keras.layers.Reshape(input_shape)
         ])
-        self.optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=.001)
+        self.optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
+        self.loss_tracker = tf.keras.metrics.Mean(name='loss')
 
     def call(self, x):
         """    
@@ -100,10 +110,12 @@ class VAE(tf.keras.Model):
         loss /= x.shape[0]
         return loss
     
-    def train_step(self, x):
+    def train_step(self, data):
+        x = data[0]
         with tf.GradientTape() as tape:
             x_hat, mu, logvar = self.call(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
-        return loss
+        self.loss_tracker.update_state(loss)
+        return {'loss':self.loss_tracker.result()}
