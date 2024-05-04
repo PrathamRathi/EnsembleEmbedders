@@ -5,8 +5,8 @@ class VAE(tf.keras.Model):
     def __init__(self, instrument_units, pitch_units, song_length, learning_rate, hidden_dim=256,latent_size=15, epochs=1):
         super(VAE, self).__init__()
         self.epochs = epochs
-        self.latent_size = latent_size  # Z
-        self.hidden_dim = hidden_dim  # H_d
+        self.latent_size = latent_size
+        self.hidden_dim = hidden_dim
         self.instrument_units = instrument_units
         self.pitch_units = pitch_units
         self.song_length = song_length

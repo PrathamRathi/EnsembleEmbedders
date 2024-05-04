@@ -6,19 +6,19 @@ import tensorflow as tf
 import os
 import argparse
 
-#-epochs 10 -lr .00003 -file chroma_rolls_batch_0.npy
+#-epochs 10 -lr 3e-5 -file chroma_rolls_all.npy
 # data_path = 'data/data/lyricsMidisP0'
 data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
 preprocessed_folder_path = "preprocessed/"
-preprocessed_path = 'preprocessed/all_chunks' # all_chunks is the filename of the .npy
+default_preprocessed_path = 'preprocessed/all_chunks' # all_chunks is the filename of the .npy
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-epochs", type=int, required = True, help = "epochs")
     parser.add_argument("-lr", type=float, required = True, help = "learning rate")
     parser.add_argument("-n", type=int, help = "number of midis if processing needed")
-    parser.add_argument("-file", type=str, required = True, help = "preprocessed file path", default= "default")
+    parser.add_argument("-file", type=str, required = True, help = "preprocessed .npy file path", default= "default")
     return parser.parse_args()
 
 def preprocess(data_path, preprocessed_path, num_files, verbose=False):
@@ -83,17 +83,19 @@ if __name__ == "__main__":
     if (args.file != "default"):
         preprocessed_path = preprocessed_folder_path + args.file
     else:
-        preprocessed_path = preprocessed_path + "_" + str(args.n)
+        preprocessed_path = default_preprocessed_path + "_" + str(args.n)
 
     #if file already exists
     if (not os.path.exists(preprocessed_path)):
         preprocess(data_path, preprocessed_path, num_files=args.n)
 
     # Load data from .npy and train
+    #TODO: automatically load only the batch size into data
     data = np.load(preprocessed_path)
     x_train = tf.constant(data)
     print(f"Loading preprocessed data from file {preprocessed_path}. Shape: {x_train.shape}")
     
+    #TODO: automatically get the parameters below
     instrument_units = 3
     pitch_units = 12
     song_length = 160
