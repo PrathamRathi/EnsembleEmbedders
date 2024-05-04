@@ -6,7 +6,7 @@ import tensorflow as tf
 import os
 import argparse
 
-#-epochs 10 -lr 3e-5 -file chroma_rolls_all.npy
+#-epochs 100 -lr 3e-5 -file chroma_rolls_all.npy
 # data_path = 'data/data/lyricsMidisP0'
 data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
@@ -19,6 +19,7 @@ def parse_arguments():
     parser.add_argument("-lr", type=float, required = True, help = "learning rate")
     parser.add_argument("-n", type=int, help = "number of midis if processing needed")
     parser.add_argument("-file", type=str, required = True, help = "preprocessed .npy file path", default= "default")
+    parser.add_argument("-name", type=str, required = True, help = "name for the saved model", default= "default")
     return parser.parse_args()
 
 def preprocess(data_path, preprocessed_path, num_files, verbose=False):
@@ -114,9 +115,9 @@ if __name__ == "__main__":
     model.fit(x_train, 
               x_train,
                 epochs=model.epochs,
-              batch_size = 32 if model.epochs > 300 else 10,
-              validation_split = 0.2,
-            #   callbacks = [LossAccuracyCallback()]
+              batch_size = 10, #TODO: changing batch size breaks training
+              validation_split = 0.2
     )
     print('Saving model')
-    model.save("saved_model/vae-default.keras")
+    saved_model_path = f'saved_model/{args.name}_e{args.epochs}_lr{args.lr}.keras'
+    model.save(saved_model_path)
