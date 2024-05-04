@@ -104,7 +104,7 @@ if __name__ == "__main__":
                         pitch_units= pitch_units,
                         learning_rate= args.lr,
                         epochs=args.epochs,
-                        hidden_dim=512,latent_size=128
+                        hidden_dim=512,latent_size=32
                         )
     model.compile(
         optimizer = model.optimizer,

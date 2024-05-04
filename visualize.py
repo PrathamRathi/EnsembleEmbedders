@@ -8,18 +8,22 @@ import tensorflow as tf
 import os
 import argparse
 
-def hw_interpolate(latent_size, steps):
+def hw_interpolate(model,latent_size, steps):
     S = steps
     z0 = tf.random.normal(shape=[S, latent_size], dtype=tf.dtypes.float32)  # [S, latent_size]
     z1 = tf.random.normal(shape=[S, latent_size], dtype=tf.dtypes.float32)
     w = tf.linspace(0, 1, S)
     w = tf.cast(tf.reshape(w, (S, 1, 1)), dtype=tf.float32)  # [S, 1, 1]
-    print('w',w.shape)
     z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
     z = tf.reshape(z, (S * S, latent_size))  # [S, S, latent_size]
-    print('z',z.shape)
+    x = model.decoder(z)
 
-def interpolate(model, latent_size, steps):
+def get_latent_encoding(model, chroma):
+    chroma = np.expand_dims(chroma, 0)
+    latent_encoding = model.get_latent_encoding(chroma)
+    return tf.squeeze(latent_encoding, 0)
+
+def interpolate(model, file1, file2, latent_size, steps):
     """
     Call this only if the model is VAE!
     Generate interpolation between two .
@@ -31,14 +35,16 @@ def interpolate(model, latent_size, steps):
     - latent_size: Latent size of your model.
     """
     S = steps
-    z0 = tf.random.normal(shape=[latent_size,], dtype=tf.dtypes.float32)  # [S, latent_size]
-    z1 = tf.random.normal(shape=[latent_size,], dtype=tf.dtypes.float32)
+    chroma0 = get_chroma_from_midi(file1)
+    chroma1 = get_chroma_from_midi(file2)
+    z0 = get_latent_encoding(model,chroma0) # [S, latent_size]
+    z1 = get_latent_encoding(model,chroma1)
     w = tf.linspace(0, 1, S)
     w = tf.cast(tf.reshape(w, (S, 1, 1)), dtype=tf.float32)  # [S, 1, 1]
-    print('w',w.shape)
     z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
-    print('z',z.shape)
-    #x = model.decoder(z)  # [S]
+    z = tf.squeeze(z,0)
+    x = model.decoder(z)  # [S]
+    print(x.shape)
 
 def predict_and_write_midi(model, midi_file):
     chroma = get_chroma_from_midi(midi_file)
@@ -76,8 +82,10 @@ if __name__ == "__main__":
     #     test_midi_processed = get_chroma_from_midi(path)
     #     processed.append(test_midi_processed)
     # processed = np.array(processed)
-    # print(processed.shape)
     # model_midi_processed = model.predict(processed)
 
     test_midi_file = 'data/Dancing Queen.mid'
-    predict_and_write_midi(model, test_midi_file)
+    test_midi_file2 = 'data/africa.mid'
+    #predict_and_write_midi(model, test_midi_file)
+    predict_and_write_midi(model, test_midi_file2)
+    #interpolate(model,test_midi_file, test_midi_file2,32,3)

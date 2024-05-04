@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 class VAE(tf.keras.Model):
-    def __init__(self, instrument_units, pitch_units, song_length, learning_rate, hidden_dim=256,latent_size=15, epochs=1):
+    def __init__(self, instrument_units, pitch_units, song_length, learning_rate, latent_size=256, hidden_dim=256,epochs=1):
         super(VAE, self).__init__()
         self.epochs = epochs
         self.latent_size = latent_size
@@ -35,6 +35,13 @@ class VAE(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
         self.loss_tracker = tf.keras.metrics.Mean(name='loss')
 
+    def get_latent_encoding(self, x):
+        latent = self.encoder(x)
+        mu = self.mu_layer(latent)
+        logvar = self.logvar_layer(latent)
+        z = self.reparametrize(mu, logvar)
+        return z
+    
     def call(self, x):
         """    
         Inputs:
@@ -49,6 +56,7 @@ class VAE(tf.keras.Model):
         mu = self.mu_layer(latent)
         logvar = self.logvar_layer(latent)
         z = self.reparametrize(mu, logvar)
+        print('z', z.shape)
         x_hat = self.decoder(z)
         return x_hat, mu, logvar
     
@@ -59,6 +67,7 @@ class VAE(tf.keras.Model):
         z = self.reparametrize(mu, logvar)
         x_hat = self.decoder(z)
         return x_hat
+    
     
     def reparametrize(self, mu, logvar):
         """
@@ -73,11 +82,6 @@ class VAE(tf.keras.Model):
         - z: Estimated latent vectors, where z[i, j] is a random value sampled from a Gaussian with
             mean mu[i, j] and log-variance logvar[i, j].
         """
-        # if mu.shape[0] == None:
-        #     print("HACK")
-        #     batch_size = int(mu.shape[1] / 32)
-        #     mu = tf.reshape(mu, [batch_size,32])
-        #     logvar = tf.reshape(logvar,[batch_size,32])
         std_dev = tf.math.sqrt(tf.math.exp(logvar))
         z = mu + tf.random.normal(shape=std_dev.shape) * std_dev
         return z
