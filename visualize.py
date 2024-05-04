@@ -40,6 +40,15 @@ def interpolate(model, latent_size, steps):
     print('z',z.shape)
     #x = model.decoder(z)  # [S]
 
+def predict_and_write_midi(model, midi_file):
+    chroma = get_chroma_from_midi(midi_file)
+    orig_midi = get_midi_from_chroma(chroma, tempo=120)
+    orig_midi.write('original.mid')
+    chroma_batch = np.expand_dims(chroma, 0)
+    pred_chroma = model.predict(chroma_batch)
+    pred_chroma = tf.squeeze(pred_chroma, axis=0).numpy()
+    pred_midi = get_midi_from_chroma(pred_chroma, tempo=120)
+    pred_midi.write('model-reconstruction.mid')
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -58,7 +67,6 @@ if __name__ == "__main__":
     model = tf.keras.models.load_model(model_path)
     model.build(input_shape = (1,3, 12, 160))
     model.summary()
-    test_midi_file = "data/data/lyricsMidisP0/" 
 
     # test_dir = 'data/test_data'
     # files = os.listdir(test_dir)
@@ -72,10 +80,4 @@ if __name__ == "__main__":
     # model_midi_processed = model.predict(processed)
 
     test_midi_file = 'data/Dancing Queen.mid'
-    test_midi_processed = get_chroma_from_midi(test_midi_file)
-    test_midi_processed = np.expand_dims(test_midi_processed, 0)
-    model_midi_processed = model.predict(test_midi_processed)
-    model_midi_processed = tf.squeeze(model_midi_processed, axis=0).numpy()
-    print(model_midi_processed)
-    reconstructed_midi = get_midi_from_chroma(model_midi_processed, tempo=120)
-    reconstructed_midi.write('model-reconstruction.mid')
+    predict_and_write_midi(model, test_midi_file)
