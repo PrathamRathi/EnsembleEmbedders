@@ -6,7 +6,7 @@ import tensorflow as tf
 import os
 import argparse
 
-#-epochs 9 -lr .00002 -file chroma_rolls_batch_0.npy
+#-epochs 10 -lr .00003 -file chroma_rolls_batch_0.npy
 # data_path = 'data/data/lyricsMidisP0'
 data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
