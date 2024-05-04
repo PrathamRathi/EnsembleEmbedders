@@ -52,6 +52,14 @@ class VAE(tf.keras.Model):
         x_hat = self.decoder(z)
         return x_hat, mu, logvar
     
+    def predict(self, x):
+        latent = self.encoder(x)
+        mu = self.mu_layer(latent)
+        logvar = self.logvar_layer(latent)
+        z = self.reparametrize(mu, logvar)
+        x_hat = self.decoder(z)
+        return x_hat
+    
     def reparametrize(self, mu, logvar):
         """
         Differentiably sample random Gaussian data with specified mean and variance using the
@@ -65,6 +73,11 @@ class VAE(tf.keras.Model):
         - z: Estimated latent vectors, where z[i, j] is a random value sampled from a Gaussian with
             mean mu[i, j] and log-variance logvar[i, j].
         """
+        # if mu.shape[0] == None:
+        #     print("HACK")
+        #     batch_size = int(mu.shape[1] / 32)
+        #     mu = tf.reshape(mu, [batch_size,32])
+        #     logvar = tf.reshape(logvar,[batch_size,32])
         std_dev = tf.math.sqrt(tf.math.exp(logvar))
         z = mu + tf.random.normal(shape=std_dev.shape) * std_dev
         return z

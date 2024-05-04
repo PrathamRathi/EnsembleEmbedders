@@ -32,6 +32,7 @@ def get_midi_from_chroma(chroma_rolls, tempo, verbose=False):
         print('Creating MIDI from tensor of shape {}'.format(chroma_rolls.shape))
 
     # Convert chroma rolls to bool
+    print(len(chroma_rolls))
     chroma_rolls = chroma_rolls > 0.5
 
     midi = pm.PrettyMIDI()

@@ -3,7 +3,6 @@ import numpy as np
 from src.midi_preprocess import get_midi_paths 
 from src.midi_utils import get_data_from_midi, get_midi_from_data
 from src.chroma_rolls_preprocessor import get_chroma_from_midi, get_midi_from_chroma
-from net.variational_autoencoder import VAE
 import numpy as np
 import tensorflow as tf
 import os
@@ -60,10 +59,23 @@ if __name__ == "__main__":
     model.build(input_shape = (1,3, 12, 160))
     model.summary()
     test_midi_file = "data/data/lyricsMidisP0/" 
+
+    # test_dir = 'data/test_data'
+    # files = os.listdir(test_dir)
+    # processed = []
+    # for f in files:
+    #     path = os.path.join(test_dir,f)
+    #     test_midi_processed = get_chroma_from_midi(path)
+    #     processed.append(test_midi_processed)
+    # processed = np.array(processed)
+    # print(processed.shape)
+    # model_midi_processed = model.predict(processed)
+
     test_midi_file = 'data/Dancing Queen.mid'
     test_midi_processed = get_chroma_from_midi(test_midi_file)
     test_midi_processed = np.expand_dims(test_midi_processed, 0)
-    print(test_midi_processed.shape)
     model_midi_processed = model.predict(test_midi_processed)
+    model_midi_processed = tf.squeeze(model_midi_processed, axis=0).numpy()
+    print(model_midi_processed)
     reconstructed_midi = get_midi_from_chroma(model_midi_processed, tempo=120)
     reconstructed_midi.write('model-reconstruction.mid')

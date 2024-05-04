@@ -6,6 +6,7 @@ import tensorflow as tf
 import os
 import argparse
 
+#-epochs 9 -lr .00002 -file chroma_rolls_batch_0.npy
 # data_path = 'data/data/lyricsMidisP0'
 data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
@@ -101,7 +102,7 @@ if __name__ == "__main__":
                         pitch_units= pitch_units,
                         learning_rate= args.lr,
                         epochs=args.epochs,
-                        hidden_dim=512,latent_size=32
+                        hidden_dim=512,latent_size=128
                         )
     model.compile(
         optimizer = model.optimizer,
