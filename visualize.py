@@ -7,6 +7,8 @@ import pretty_midi as pm
 import librosa.display
 import matplotlib.pyplot as plt
 import argparse
+import json
+import pprint
 
 INFERENCE_DIR = 'inference/'
 ORIGINAL = '-original.mid'
@@ -42,7 +44,7 @@ def interpolate_by_average(model, file0, file1, weight, name):
     z1 = get_latent_encoding(model,chroma1)
     z = weight * z0 + (1 - weight) * z1
     x = tf.squeeze(model.decoder(z)).numpy()
-    chroma_to_file(x, INFERENCE_DIR + '-average-' + name)
+    chroma_to_file(x, INFERENCE_DIR + 'average-' + name)
     return x
 
 def interpolate_by_steps(model, file0, file1, steps, name):
@@ -80,7 +82,10 @@ def chroma_to_file(chroma, file_path):
     midi = get_midi_from_chroma(chroma, tempo=120)
     plt.figure(figsize=(8, 4))
     plot_piano_roll(midi, 42, 90) # notes should be in 48 to 84
-    plt.show()
+    # plt.show()
+    basename = file_path.split('/')[-1]
+    basename = basename.split('.')[0]
+    plt.savefig(fname=INFERENCE_DIR + basename)
     midi.write(file_path)
 
 def predict_and_write_midi(model, midi_file, name):
@@ -105,6 +110,16 @@ def plot_piano_roll(midi, start_pitch, end_pitch, fs=100):
                                 hop_length=1, sr=fs, x_axis='time', y_axis='cqt_note',
                                 fmin=pm.note_number_to_hz(start_pitch))
 
+def get_losses_from_history(model_path):
+    model_name = model_path.split('/')[-1]
+    with open('saved_model/history/' + model_name + '.json') as json_data:
+        d = json.load(json_data)
+        json_data.close()
+    best_loss = d['loss'][-1]
+    best_reconstruction_loss = d['recon. loss'][-1]
+    best_KL_loss = d['kl loss'][-1]
+    return best_loss, best_reconstruction_loss, best_KL_loss
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", type=str, help = "pitches or chroma", default="chroma")
@@ -120,7 +135,13 @@ if __name__ == "__main__":
     
     model_path = "saved_model/" + args.model
     model = tf.keras.models.load_model(model_path)
+    losses = get_losses_from_history(model_path)
     model.summary()
+    print("Best losses from training:")
+    print("loss: {}".format(losses[0]))
+    print("recon. loss: {}".format(losses[1]))
+    print("KL loss: {}".format(losses[2]))
+    print()
 
     test_midi_file0 = 'data/Dancing Queen.mid'
     test_midi_file1 = 'data/africa.mid'
