@@ -51,15 +51,14 @@ def interpolate(model, file0, file1, steps, name):
     z0 = get_latent_encoding(model,chroma0)
     z1 = get_latent_encoding(model,chroma1)
     w = tf.linspace(0, 1, steps)
-    w = tf.cast(tf.reshape(w, (steps, 1, 1)), dtype=tf.float32)
-    print(w.shape)
+    w = tf.cast(tf.reshape(w, (steps, 1, 1)), dtype=tf.float32)  
     z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
-    print("shape of z: {}".format(z.shape))
     z = tf.squeeze(z,0)
     x = model.decoder(z)
-    print("shape of x: {}".format(x.shape))
-    # for chroma in x:
-    #     print(chroma.shape)
+    for i in range(steps):
+        chroma = x[i]
+        chroma = chroma.numpy()
+        chroma_to_file(chroma, INFERENCE_DIR + str(i) + name)
 
 def chroma_to_file(chroma, file_path):
     """
@@ -84,7 +83,6 @@ def predict_and_write_midi(model, midi_file, name):
     chroma_batch = np.expand_dims(chroma, 0).astype(np.int32)
     pred_chroma = model(chroma_batch)[0]
     pred_chroma = tf.squeeze(pred_chroma, axis=0).numpy()
-    print(np.mean(pred_chroma))
     chroma_to_file(pred_chroma, INFERENCE_DIR + name + RECONSTRUCTED)
 
 def parse_arguments():
@@ -114,8 +112,8 @@ if __name__ == "__main__":
     # processed = np.array(processed)
     # model_midi_processed = model.predict(processed)
 
-    test_midi_file = 'data/Dancing Queen.mid'
-    test_midi_file2 = 'data/africa.mid'
+    test_midi_file0 = 'data/Dancing Queen.mid'
+    test_midi_file1 = 'data/africa.mid'
     # predict_and_write_midi(model, test_midi_file, 'dq')
-    predict_and_write_midi(model, test_midi_file2, 'toto')
-    interpolate(model,test_midi_file, test_midi_file2,32,3)
+    #predict_and_write_midi(model, test_midi_file2, 'toto')
+    interpolate(model,test_midi_file0, test_midi_file1,3,'dq-toto.mid')
