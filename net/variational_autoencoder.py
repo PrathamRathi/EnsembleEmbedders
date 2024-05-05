@@ -21,11 +21,17 @@ class DenseVAE(tf.keras.Model):
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim, activation='relu')
+            tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
+            tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
+            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
+            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
         ])
         self.mu_layer = tf.keras.layers.Dense(latent_size)
         self.logvar_layer = tf.keras.layers.Dense(latent_size)
         self.decoder = tf.keras.Sequential([
+            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
+            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
+            tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),

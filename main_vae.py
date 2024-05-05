@@ -5,6 +5,8 @@ import os
 import argparse
 import json
 
+#-epochs 100 -lr 3e-5 -file chroma_rolls_all.npy
+# data_path = 'data/data/lyricsMidisP0'
 data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
 preprocessed_folder_path = "preprocessed/"
@@ -15,8 +17,7 @@ def parse_arguments():
     parser.add_argument("-epochs", type=int, required = True, help = "epochs")
     parser.add_argument("-lr", type=float, required = True, help = "learning rate")
     parser.add_argument("-file", type=str, required = True, help = "preprocessed .npy file path", default= "default")
-    parser.add_argument("-model", type=str, help = "type of model to use (dense, cdc, etc.)", default= "dense")
-    return parser.parse_args()
+    parser.add_argument("-model", type=str, help = "type of model to use (dense, cdc, etc.)", default= "dense")    return parser.parse_args()
 
 
 if __name__ == "__main__":
@@ -53,13 +54,12 @@ if __name__ == "__main__":
     model.compile(optimizer = model.optimizer,)
     model.build(input_shape = (1,instrument_units, pitch_units, song_length))
     model.summary()
-    history = model.fit(x_train, x_train,epochs=model.epochs,batch_size = 32 if model.epochs > 300 else 10,validation_split = 0.2)
-
-    # Save model and training history
-    MODEL_DIR = 'saved_model/'
-    HIST_DIR = 'saved_model/history/'
+    model.fit(x_train, 
+              x_train,
+                epochs=model.epochs,
+              batch_size = 10, #TODO: changing batch size breaks training
+              validation_split = 0.2
+    )
     print('Saving model')
-    model.save(MODEL_DIR + name + 'vae')
-    print('Saving model history')
-    out_file = open(HIST_DIR + name + 'vae.json', "w") 
-    json.dump(history.history, out_file)
+    saved_model_path = f'saved_model/{args.name}_e{args.epochs}_lr{args.lr}.keras'
+    model.save(saved_model_path)
