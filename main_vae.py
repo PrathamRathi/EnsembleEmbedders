@@ -55,12 +55,13 @@ if __name__ == "__main__":
     model.compile(optimizer = model.optimizer,)
     model.build(input_shape = (1,instrument_units, pitch_units, song_length))
     model.summary()
-    model.fit(x_train, 
-              x_train,
-                epochs=model.epochs,
-              batch_size = 10, #TODO: changing batch size breaks training
-              validation_split = 0.2
-    )
+    history = model.fit(x_train, x_train,epochs=model.epochs,batch_size = 32 if model.epochs > 300 else 10,validation_split = 0.2)
+
+    # Save model and training history
+    MODEL_DIR = 'saved_model/'
+    HIST_DIR = 'saved_model/history/'
     print('Saving model')
-    saved_model_path = f'saved_model/{args.name}_e{args.epochs}_lr{args.lr}.keras'
-    model.save(saved_model_path)
+    model.save(MODEL_DIR + name + 'vae')
+    print('Saving model history')
+    out_file = open(HIST_DIR + name + 'vae.json', "w") 
+    json.dump(history.history, out_file)
