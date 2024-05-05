@@ -1,15 +1,11 @@
 import tensorflow as tf
 import numpy as np
-from src.midi_preprocess import get_midi_paths 
-from src.midi_utils import get_data_from_midi, get_midi_from_data
 from src.chroma_rolls_preprocessor import get_chroma_from_midi, get_midi_from_chroma
 import numpy as np
 import tensorflow as tf
-from net import variational_autoencoder
 import pretty_midi as pm
 import librosa.display
 import matplotlib.pyplot as plt
-import os
 import argparse
 
 INFERENCE_DIR = 'inference/'
