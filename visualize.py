@@ -6,6 +6,9 @@ from src.chroma_rolls_preprocessor import get_chroma_from_midi, get_midi_from_ch
 import numpy as np
 import tensorflow as tf
 from net import variational_autoencoder
+import pretty_midi as pm
+import librosa.display
+import matplotlib.pyplot as plt
 import os
 import argparse
 
@@ -79,6 +82,9 @@ def chroma_to_file(chroma, file_path):
     - file_path: path to write midi to
     """
     midi = get_midi_from_chroma(chroma, tempo=120)
+    plt.figure(figsize=(8, 4))
+    plot_piano_roll(midi, 42, 90) # notes should be in 48 to 84
+    plt.show()
     midi.write(file_path)
 
 def predict_and_write_midi(model, midi_file, name):
@@ -95,6 +101,13 @@ def predict_and_write_midi(model, midi_file, name):
     pred_chroma = model(chroma_batch)[0]
     pred_chroma = tf.squeeze(pred_chroma, axis=0).numpy()
     chroma_to_file(pred_chroma, INFERENCE_DIR + name + RECONSTRUCTED)
+
+# From https://github.com/craffel/pretty-midi/blob/main/Tutorial.ipynb
+def plot_piano_roll(midi, start_pitch, end_pitch, fs=100):
+    # Use librosa's specshow function for displaying the piano roll
+    librosa.display.specshow(midi.get_piano_roll(fs)[start_pitch:end_pitch],
+                                hop_length=1, sr=fs, x_axis='time', y_axis='cqt_note',
+                                fmin=pm.note_number_to_hz(start_pitch))
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
