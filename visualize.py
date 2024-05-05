@@ -50,15 +50,23 @@ def interpolate(model, file0, file1, steps, name):
     chroma1 = get_chroma_from_midi(file1)
     z0 = get_latent_encoding(model,chroma0)
     z1 = get_latent_encoding(model,chroma1)
-    w = tf.linspace(0, 1, steps)
-    w = tf.cast(tf.reshape(w, (steps, 1, 1)), dtype=tf.float32)  
-    z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
-    z = tf.squeeze(z,0)
-    x = model.decoder(z)
-    for i in range(steps):
-        chroma = x[i]
-        chroma = chroma.numpy()
-        chroma_to_file(chroma, INFERENCE_DIR + str(i) + name)
+    z = (z0 + z1) / 2.0
+    x = tf.squeeze(model.decoder(z)).numpy()
+    # w = tf.linspace(0, 1, steps)
+    # w = tf.cast(tf.reshape(w, (steps, 1, 1)), dtype=tf.float32)
+    # print("W: {}".format(w))
+    # print(z0)
+    # z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
+    # print(z[0])
+    # z = tf.squeeze(z,0)
+    # x = model.decoder(z)
+    # for i in range(steps):
+    #     chroma = x[i]
+    #     chroma = chroma.numpy()
+    #     print(np.mean(chroma))
+    #     chroma_to_file(chroma, INFERENCE_DIR + str(i) + name)
+    print(x)
+    chroma_to_file(x, INFERENCE_DIR + 'middle' + name)
 
 def chroma_to_file(chroma, file_path):
     """
