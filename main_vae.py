@@ -105,4 +105,4 @@ if __name__ == "__main__":
     model.summary()
     model.fit(x_train, x_train,epochs=model.epochs,batch_size = 32 if model.epochs > 300 else 10,validation_split = 0.2)
     print('Saving model')
-    model.save("saved_model/vae-default.keras")
+    model.save("saved_model/vae-default")

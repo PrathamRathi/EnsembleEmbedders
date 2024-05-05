@@ -76,15 +76,15 @@ def predict_and_write_midi(model, midi_file, name):
     """
     chroma = get_chroma_from_midi(midi_file)
     chroma_to_file(chroma, INFERENCE_DIR + name + ORIGINAL)
-    chroma_batch = np.expand_dims(chroma, 0)
-    pred_chroma = model.predict(chroma_batch)
+    chroma_batch = np.expand_dims(chroma, 0).astype(np.int32)
+    pred_chroma = model.predict(chroma_batch)[0]
     pred_chroma = tf.squeeze(pred_chroma, axis=0).numpy()
     chroma_to_file(pred_chroma, INFERENCE_DIR + name + RECONSTRUCTED)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", type=str, help = "pitches or chroma", default="chroma")
-    parser.add_argument("-model", type=str, help = "model file name", default= "default.keras")
+    parser.add_argument("-model", type=str, help = "model file name", default= "default")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -96,7 +96,6 @@ if __name__ == "__main__":
     
     model_path = "saved_model/" + args.model
     model = tf.keras.models.load_model(model_path)
-    model.build(input_shape = (1,3, 12, 160))
     model.summary()
 
     # test_dir = 'data/test_data'

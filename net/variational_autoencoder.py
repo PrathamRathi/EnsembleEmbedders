@@ -99,7 +99,7 @@ class VAE(tf.keras.Model):
             mean mu[i, j] and log-variance logvar[i, j].
         """
         std_dev = tf.math.sqrt(tf.math.exp(logvar))
-        z = mu + tf.random.normal(shape=std_dev.shape) * std_dev
+        z = mu + tf.random.normal(shape=tf.shape(std_dev)) * std_dev
         return z
 
 
