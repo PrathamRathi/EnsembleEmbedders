@@ -1,9 +1,9 @@
 import tensorflow as tf
 
 
-class VAE(tf.keras.Model):
+class DenseVAE(tf.keras.Model):
     def __init__(self, instrument_units, pitch_units, song_length, learning_rate, latent_size=256, hidden_dim=256,epochs=1):
-        super(VAE, self).__init__()
+        super(DenseVAE, self).__init__()
         self.epochs = epochs
         self.latent_size = latent_size
         self.hidden_dim = hidden_dim
@@ -122,11 +122,10 @@ class VAE(tf.keras.Model):
         )
         reconstruction_loss = bce_fn(x, x_hat) * x.shape[
             -1]  # Sum over all loss terms for each data point. This looks weird, but we need this to work...
-        self.recon_loss_tracker.update_state(reconstruction_loss/x.shape[0])
         return reconstruction_loss
 
 
-    def loss_function(self,x_hat, x, mu, logvar):
+    def loss_function(self,x_hat, x, mu, logvar, test=False):
         """
         Computes the negative variational lower bound loss term of the VAE (refer to formulation in notebook).
         Returned loss is the average loss per sample in the current batch.
@@ -142,15 +141,18 @@ class VAE(tf.keras.Model):
         """
         variance = tf.math.exp(logvar)
         kl_loss = -.5 * tf.math.reduce_sum((1 + logvar - tf.square(mu) - variance))
-        self.kld_loss_tracker.update_state(kl_loss)
-        loss = self.bce_function(x_hat, x) + kl_loss
+        bce_loss = self.bce_function(x_hat, x)
+        loss = bce_loss + kl_loss
         loss /= x.shape[0]
+        if not test:
+            self.kld_loss_tracker.update_state(kl_loss)
+            self.recon_loss_tracker.update_state(bce_loss/x.shape[0])
         return loss
     
     def train_step(self, data):
         x = data[0]
         with tf.GradientTape() as tape:
-            x_hat, mu, logvar, _ = self.call(x)
+            x_hat, mu, logvar, _ = self(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -159,3 +161,9 @@ class VAE(tf.keras.Model):
                 'recon. loss':self.recon_loss_tracker.result(),
                 'kl loss':self.kld_loss_tracker.result()
                 }
+    
+    def test_step(self, data):
+        x = data[0]
+        x_hat, mu, logvar, _ = self(x)
+        loss = self.loss_function(x_hat, x, mu, logvar, test=True)
+        return {"total_loss": loss} # <-- modify the return value here

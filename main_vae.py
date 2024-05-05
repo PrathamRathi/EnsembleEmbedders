@@ -1,4 +1,4 @@
-from net.variational_autoencoder import VAE
+from net.variational_autoencoder import DenseVAE
 import numpy as np
 import tensorflow as tf
 import os
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     model = None
     name = args.model + '-'
     if args.model == 'dense':
-        model = VAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
+        model = DenseVAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
                     learning_rate= args.lr,epochs=args.epochs,
                             hidden_dim=512,latent_size=16)
     elif args.model == 'cdc':
