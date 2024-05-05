@@ -12,15 +12,15 @@ def get_chroma_from_midi(midi_path, verbose=False):
         print()
     mid = pm.PrettyMIDI(midi_path)
     BPM = mid.get_tempo_changes()[1][0]
-    sample_length = (60.0 / 4.0) / BPM
-    interval_end = 160.0 * sample_length
-    chroma_rolls = np.zeros((3, 12, 160))
+    sample_length = (60.0 / 8.0) / BPM
+    interval_end = 320.0 * sample_length
+    chroma_rolls = np.zeros((3, 12, 320))
     i = 0
     for instr in mid.instruments:
         if i > 2:
             break
         chroma_roll = instr.get_chroma(times=np.arange(0, interval_end, sample_length)).astype(bool) + 0
-        if chroma_roll.shape[1] == 161:
+        if chroma_roll.shape[1] == 321:
             chroma_roll = chroma_roll[:, :-1]
         if np.max(chroma_roll):
             chroma_rolls[i, :, :] = chroma_roll
@@ -47,7 +47,7 @@ def get_midi_from_chroma(chroma_rolls, tempo, verbose=False):
 
     # Compute the length of a beat using the given tempo
     mins_per_beat = 1 / tempo
-    secs_per_4th_beat = mins_per_beat * (60 / 4)
+    secs_per_8th_beat = mins_per_beat * (60 / 8)
 
     for i in range(3):
         # Add all melodies back into the midi
@@ -65,11 +65,11 @@ def get_midi_from_chroma(chroma_rolls, tempo, verbose=False):
                     col += 1
                     continue
                 # Otherwise...
-                note_start = col * secs_per_4th_beat
+                note_start = col * secs_per_8th_beat
                
                 while col < melodies[i].shape[1] and melodies[i][row, col]:
                     col += 1
-                note_end = col * secs_per_4th_beat
+                note_end = col * secs_per_8th_beat
                 
                 if note_vel:
                     note = pm.Note(80, note_pitch + 12 * (i + 4), note_start, note_end)

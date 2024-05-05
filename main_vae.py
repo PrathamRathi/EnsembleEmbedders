@@ -39,7 +39,7 @@ if __name__ == "__main__":
     #TODO: automatically get the parameters below
     instrument_units = 3
     pitch_units = 12
-    song_length = 160
+    song_length = x_train.shape[-1]
     model = VAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
                 learning_rate= args.lr,epochs=args.epochs,
                         hidden_dim=512,latent_size=32)
