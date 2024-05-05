@@ -140,17 +140,18 @@ class DenseVAE(tf.keras.Model):
         Returns:
         - loss: Tensor containing the scalar loss for the negative variational lowerbound
         """
+        lambd = 2
         variance = tf.math.exp(logvar)
         kl_loss = -.5 * tf.math.reduce_sum((1 + logvar - tf.square(mu) - variance))
         self.kld_loss_tracker.update_state(kl_loss)
-        loss = self.bce_function(x_hat, x) + kl_loss
+        loss = self.bce_function(x_hat, x) + lambd * kl_loss
         loss /= x.shape[0]
         return loss
     
     def train_step(self, data):
         x = data[0]
         with tf.GradientTape() as tape:
-            x_hat, mu, logvar, _ = self.call(x)
+            x_hat, mu, logvar, _ = self(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
