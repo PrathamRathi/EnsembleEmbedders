@@ -116,8 +116,8 @@ if __name__ == "__main__":
     test_midi_file0 = 'data/Dancing Queen.mid'
     test_midi_file1 = 'data/africa.mid'
 
-    # predict_and_write_midi(model, test_midi_file, 'dq')
-    # predict_and_write_midi(model, test_midi_file2, 'toto')
+    predict_and_write_midi(model, test_midi_file0, 'dq')
+    predict_and_write_midi(model, test_midi_file1, 'toto')
 
     interpolate_by_average(model,test_midi_file0, test_midi_file1, .5, 'dq-toto.mid')
-    interpolate_by_steps(model,test_midi_file0, test_midi_file1, 3, 'dq-toto.mid')
+    # interpolate_by_steps(model,test_midi_file0, test_midi_file1, 3, 'dq-toto.mid')

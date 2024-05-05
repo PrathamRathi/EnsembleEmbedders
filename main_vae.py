@@ -42,7 +42,7 @@ if __name__ == "__main__":
     song_length = x_train.shape[-1]
     model = VAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
                 learning_rate= args.lr,epochs=args.epochs,
-                        hidden_dim=512,latent_size=32)
+                        hidden_dim=512,latent_size=16)
     model.compile(optimizer = model.optimizer,)
     model.build(input_shape = (1,instrument_units, pitch_units, song_length))
     model.summary()
