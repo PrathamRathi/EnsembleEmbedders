@@ -1,6 +1,7 @@
 import numpy as np
 import pretty_midi as pm
 from time import sleep
+import random
 
 
 def name2num(name):
@@ -13,13 +14,14 @@ def get_chroma_from_midi(midi_path, verbose=False):
     mid = pm.PrettyMIDI(midi_path)
     BPM = mid.get_tempo_changes()[1][0]
     sample_length = (60.0 / 8.0) / BPM
-    interval_end = 320.0 * sample_length
+    start = random.randint(2, 5) * 32
+    end = start + 320.0 * sample_length
     chroma_rolls = np.zeros((3, 12, 320))
     i = 0
     for instr in mid.instruments:
         if i > 2:
             break
-        chroma_roll = instr.get_chroma(times=np.arange(0, interval_end, sample_length)).astype(bool) + 0
+        chroma_roll = instr.get_chroma(times=np.arange(start, end, sample_length)).astype(bool) + 0
         if chroma_roll.shape[1] == 321:
             chroma_roll = chroma_roll[:, :-1]
         if np.max(chroma_roll):
