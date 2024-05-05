@@ -21,17 +21,11 @@ class DenseVAE(tf.keras.Model):
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
+            tf.keras.layers.Dense(self.hidden_dim, activation='relu')
         ])
         self.mu_layer = tf.keras.layers.Dense(latent_size)
         self.logvar_layer = tf.keras.layers.Dense(latent_size)
         self.decoder = tf.keras.Sequential([
-            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim // 2, activation='relu'),
-            tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
             tf.keras.layers.Dense(self.hidden_dim, activation='relu'),
@@ -128,10 +122,11 @@ class DenseVAE(tf.keras.Model):
         )
         reconstruction_loss = bce_fn(x, x_hat) * x.shape[
             -1]  # Sum over all loss terms for each data point. This looks weird, but we need this to work...
+        self.recon_loss_tracker.update_state(reconstruction_loss/x.shape[0])
         return reconstruction_loss
 
 
-    def loss_function(self,x_hat, x, mu, logvar, test=False):
+    def loss_function(self,x_hat, x, mu, logvar):
         """
         Computes the negative variational lower bound loss term of the VAE (refer to formulation in notebook).
         Returned loss is the average loss per sample in the current batch.
@@ -147,18 +142,15 @@ class DenseVAE(tf.keras.Model):
         """
         variance = tf.math.exp(logvar)
         kl_loss = -.5 * tf.math.reduce_sum((1 + logvar - tf.square(mu) - variance))
-        bce_loss = self.bce_function(x_hat, x)
-        loss = bce_loss + kl_loss
+        self.kld_loss_tracker.update_state(kl_loss)
+        loss = self.bce_function(x_hat, x) + kl_loss
         loss /= x.shape[0]
-        if not test:
-            self.kld_loss_tracker.update_state(kl_loss)
-            self.recon_loss_tracker.update_state(bce_loss/x.shape[0])
         return loss
     
     def train_step(self, data):
         x = data[0]
         with tf.GradientTape() as tape:
-            x_hat, mu, logvar, _ = self(x)
+            x_hat, mu, logvar, _ = self.call(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -167,9 +159,3 @@ class DenseVAE(tf.keras.Model):
                 'recon. loss':self.recon_loss_tracker.result(),
                 'kl loss':self.kld_loss_tracker.result()
                 }
-    
-    def test_step(self, data):
-        x = data[0]
-        x_hat, mu, logvar, _ = self(x)
-        loss = self.loss_function(x_hat, x, mu, logvar, test=True)
-        return {"total_loss": loss} # <-- modify the return value here
