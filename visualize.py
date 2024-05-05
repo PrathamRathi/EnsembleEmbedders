@@ -13,16 +13,6 @@ INFERENCE_DIR = 'inference/'
 ORIGINAL = '-original.mid'
 RECONSTRUCTED = '-model-reconstructed.mid'
 
-def hw_interpolate(model,latent_size, steps):
-    S = steps
-    z0 = tf.random.normal(shape=[S, latent_size], dtype=tf.dtypes.float32)  # [S, latent_size]
-    z1 = tf.random.normal(shape=[S, latent_size], dtype=tf.dtypes.float32)
-    w = tf.linspace(0, 1, S)
-    w = tf.cast(tf.reshape(w, (S, 1, 1)), dtype=tf.float32)  # [S, 1, 1]
-    z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
-    z = tf.reshape(z, (S * S, latent_size))  # [S, S, latent_size]
-    x = model.decoder(z)
-
 def get_latent_encoding(model, chroma)->tf.Tensor:
     """
     Gets latent encoding for the given chroma
@@ -36,37 +26,50 @@ def get_latent_encoding(model, chroma)->tf.Tensor:
     # return tf.squeeze(latent_encoding, 0)
     return latent_encoding
 
-def interpolate(model, file0, file1, steps, name):
+def interpolate_by_average(model, file0, file1, weight, name):
     """
-    Generate interpolation between two midi files
+    Generate interpolation between two midi files by taking a weighted average of latent encodings
     Inputs:
     - model: a trained tf.keras.Model instance
     - file0, file1: paths to midi files that will be the start and end of the interpolation respectively
     - latent_size: Latent size of your model.
     - steps: number of steps between (and inclusive of) the start and end
+    - name: base name of the midi file
     Returns: a tensor that is of the same shape as model output with steps number as the batch size
     """
     chroma0 = get_chroma_from_midi(file0)
     chroma1 = get_chroma_from_midi(file1)
     z0 = get_latent_encoding(model,chroma0)
     z1 = get_latent_encoding(model,chroma1)
-    z = (z0 + z1) / 2.0
+    z = weight * z0 + (1 - weight) * z1
     x = tf.squeeze(model.decoder(z)).numpy()
-    # w = tf.linspace(0, 1, steps)
-    # w = tf.cast(tf.reshape(w, (steps, 1, 1)), dtype=tf.float32)
-    # print("W: {}".format(w))
-    # print(z0)
-    # z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
-    # print(z[0])
-    # z = tf.squeeze(z,0)
-    # x = model.decoder(z)
-    # for i in range(steps):
-    #     chroma = x[i]
-    #     chroma = chroma.numpy()
-    #     print(np.mean(chroma))
-    #     chroma_to_file(chroma, INFERENCE_DIR + str(i) + name)
-    print(x)
-    chroma_to_file(x, INFERENCE_DIR + 'middle' + name)
+    chroma_to_file(x, INFERENCE_DIR + '-average-' + name)
+    return x
+
+def interpolate_by_steps(model, file0, file1, steps, name):
+    """
+    Generate interpolation between two midi files by going step by step
+    Inputs:
+    - model: a trained tf.keras.Model instance
+    - file0, file1: paths to midi files that will be the start and end of the interpolation respectively
+    - steps: number of steps between (and inclusive of) the start and end
+    - name: base name of the midi file
+    Returns: a tensor that is of the same shape as model output with steps number as the batch size
+    """
+    chroma0 = get_chroma_from_midi(file0)
+    chroma1 = get_chroma_from_midi(file1)
+    z0 = get_latent_encoding(model,chroma0)
+    z1 = get_latent_encoding(model,chroma1)
+    w = tf.linspace(0, 1, steps)
+    w = tf.cast(tf.reshape(w, (steps, 1, 1)), dtype=tf.float32)
+    z = tf.transpose(w * z0 + (1 - w) * z1, perm=[1, 0, 2])
+    z = tf.squeeze(z,0)
+    x = model.decoder(z)
+    for i in range(steps):
+        chroma = x[i]
+        chroma = chroma.numpy()
+        chroma_to_file(chroma, INFERENCE_DIR + 'step' + str(i) + name)
+    return x
 
 def chroma_to_file(chroma, file_path):
     """
@@ -110,18 +113,11 @@ if __name__ == "__main__":
     model = tf.keras.models.load_model(model_path)
     model.summary()
 
-    # test_dir = 'data/test_data'
-    # files = os.listdir(test_dir)
-    # processed = []
-    # for f in files:
-    #     path = os.path.join(test_dir,f)
-    #     test_midi_processed = get_chroma_from_midi(path)
-    #     processed.append(test_midi_processed)
-    # processed = np.array(processed)
-    # model_midi_processed = model.predict(processed)
-
     test_midi_file0 = 'data/Dancing Queen.mid'
     test_midi_file1 = 'data/africa.mid'
+
     # predict_and_write_midi(model, test_midi_file, 'dq')
-    #predict_and_write_midi(model, test_midi_file2, 'toto')
-    interpolate(model,test_midi_file0, test_midi_file1,3,'dq-toto.mid')
+    # predict_and_write_midi(model, test_midi_file2, 'toto')
+
+    interpolate_by_average(model,test_midi_file0, test_midi_file1, .5, 'dq-toto.mid')
+    interpolate_by_steps(model,test_midi_file0, test_midi_file1, 3, 'dq-toto.mid')
