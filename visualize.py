@@ -5,6 +5,7 @@ from src.midi_utils import get_data_from_midi, get_midi_from_data
 from src.chroma_rolls_preprocessor import get_chroma_from_midi, get_midi_from_chroma
 import numpy as np
 import tensorflow as tf
+from net import variational_autoencoder
 import os
 import argparse
 
@@ -79,12 +80,13 @@ def predict_and_write_midi(model, midi_file, name):
     chroma_batch = np.expand_dims(chroma, 0).astype(np.int32)
     pred_chroma = model.predict(chroma_batch)[0]
     pred_chroma = tf.squeeze(pred_chroma, axis=0).numpy()
+    print(np.mean(pred_chroma))
     chroma_to_file(pred_chroma, INFERENCE_DIR + name + RECONSTRUCTED)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", type=str, help = "pitches or chroma", default="chroma")
-    parser.add_argument("-model", type=str, help = "model file name", default= "default")
+    parser.add_argument("-model", type=str, help = "model file name", default= "vae-default")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -110,6 +112,6 @@ if __name__ == "__main__":
 
     test_midi_file = 'data/Dancing Queen.mid'
     test_midi_file2 = 'data/africa.mid'
-    #predict_and_write_midi(model, test_midi_file)
-    predict_and_write_midi(model, test_midi_file2, 'toto')
+    predict_and_write_midi(model, test_midi_file, 'dq')
+    #predict_and_write_midi(model, test_midi_file2, 'toto')
     #interpolate(model,test_midi_file, test_midi_file2,32,3)
