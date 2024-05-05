@@ -1,4 +1,5 @@
 from net.variational_autoencoder import DenseVAE
+from net.conv_vae import ConvVAE
 import numpy as np
 import tensorflow as tf
 import os
@@ -17,7 +18,7 @@ def parse_arguments():
     parser.add_argument("-epochs", type=int, required = True, help = "epochs")
     parser.add_argument("-lr", type=float, required = True, help = "learning rate")
     parser.add_argument("-file", type=str, required = True, help = "preprocessed .npy file path", default= "default")
-    parser.add_argument("-model", type=str, help = "type of model to use (dense, cdc, etc.)", default= "dense")    
+    parser.add_argument("-model", type=str, help = "type of model to use (dense, conv, etc.)", default= "dense")    
     return parser.parse_args()
 
 
@@ -47,9 +48,11 @@ if __name__ == "__main__":
         model = DenseVAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
                     learning_rate= args.lr,epochs=args.epochs,
                             hidden_dim=512,latent_size=16)
-    elif args.model == 'cdc':
+    elif args.model == 'conv':
         # TODO: set model to conv-deconv
-        model = None
+        model = ConvVAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
+                    learning_rate= args.lr,epochs=args.epochs,
+                            hidden_dim=512,latent_size=32)
     
     # Train model
     model.compile(optimizer = model.optimizer,)
