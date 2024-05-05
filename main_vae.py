@@ -6,8 +6,6 @@ import tensorflow as tf
 import os
 import argparse
 
-#-epochs 10 -lr 3e-5 -file chroma_rolls_all.npy
-# data_path = 'data/data/lyricsMidisP0'
 data_path = 'data/data/lyricsMidisP0'
 output_path = 'output/'
 preprocessed_folder_path = "preprocessed/"
@@ -99,24 +97,12 @@ if __name__ == "__main__":
     instrument_units = 3
     pitch_units = 12
     song_length = 160
-    model = VAE(song_length= song_length,
-                        instrument_units= instrument_units,
-                        pitch_units= pitch_units,
-                        learning_rate= args.lr,
-                        epochs=args.epochs,
-                        hidden_dim=512,latent_size=32
-                        )
-    model.compile(
-        optimizer = model.optimizer,
-    )
-    model.build(input_shape = (1,3, 12, 160))
+    model = VAE(song_length= song_length,instrument_units= instrument_units,pitch_units= pitch_units,
+                learning_rate= args.lr,epochs=args.epochs,
+                        hidden_dim=512,latent_size=32)
+    model.compile(optimizer = model.optimizer,)
+    model.build(input_shape = (1,instrument_units, pitch_units, song_length))
     model.summary()
-    model.fit(x_train, 
-              x_train,
-                epochs=model.epochs,
-              batch_size = 32 if model.epochs > 300 else 10,
-              validation_split = 0.2,
-            #   callbacks = [LossAccuracyCallback()]
-    )
+    model.fit(x_train, x_train,epochs=model.epochs,batch_size = 32 if model.epochs > 300 else 10,validation_split = 0.2)
     print('Saving model')
     model.save("saved_model/vae-default.keras")

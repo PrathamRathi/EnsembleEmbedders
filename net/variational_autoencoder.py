@@ -35,18 +35,27 @@ class VAE(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
         self.loss_tracker = tf.keras.metrics.Mean(name='loss')
 
+
     def get_latent_encoding(self, x):
+        """
+        Returns latent encoding of input
+        Inputs:
+        - x: a batch of input chroma
+        Returns:
+        - z: batch of latent encodings of input created by encoder and reparameterization
+        """
         latent = self.encoder(x)
         mu = self.mu_layer(latent)
         logvar = self.logvar_layer(latent)
         z = self.reparametrize(mu, logvar)
         return z
     
+
     def call(self, x):
         """    
+        Runs a forward pass of the entire vae
         Inputs:
-        - x: Batch of input images of shape (N, 1, H, W)
-        
+        - x: Batch of input chroma of shape (N, 1, H, W)    
         Returns:
         - x_hat: Reconstruced input data of shape (N,1,H,W)
         - mu: Matrix representing estimated posterior mu (N, Z), with Z latent space dimension
@@ -56,11 +65,18 @@ class VAE(tf.keras.Model):
         mu = self.mu_layer(latent)
         logvar = self.logvar_layer(latent)
         z = self.reparametrize(mu, logvar)
-        print('z', z.shape)
         x_hat = self.decoder(z)
         return x_hat, mu, logvar
     
+
     def predict(self, x):
+        """
+        Runs a forward pass on the data but only returns reconstructions
+        Inputs:
+        - x: Batch of input chroma of shape (N, 1, H, W)    
+        Returns:
+        - x_hat: Reconstruced input data of shape (N,1,H,W)
+        """
         latent = self.encoder(x)
         mu = self.mu_layer(latent)
         logvar = self.logvar_layer(latent)
@@ -68,7 +84,7 @@ class VAE(tf.keras.Model):
         x_hat = self.decoder(z)
         return x_hat
     
-    
+
     def reparametrize(self, mu, logvar):
         """
         Differentiably sample random Gaussian data with specified mean and variance using the
