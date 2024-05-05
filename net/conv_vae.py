@@ -15,7 +15,7 @@ class ConvVAE(tf.keras.Model):
         self.pitch_units = pitch_units
         self.song_length = song_length
 
-        input_shape = (self.instrument_units, self.pitch_units, self.song_length) # Channels last
+        input_shape = (self.pitch_units, self.song_length, self.instrument_units) # Channels last
         flattened_dim = self.pitch_units * self.song_length * self.instrument_units
 
         if (instrument_units == 1):
@@ -38,13 +38,13 @@ class ConvVAE(tf.keras.Model):
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dense(hidden_dim*2, activation='relu'),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dense(flattened_dim, activation='relu'),
+            tf.keras.layers.Dense(flattened_dim, activation='sigmoid'),
             tf.keras.layers.Reshape(input_shape),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Conv2D(3, 16, data_format='channels_first',
-                                   padding='SAME', activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=.1)),
-            tf.keras.layers.Conv2D(3, 8, data_format='channels_first',
-                                   padding='SAME', activation='sigmoid', kernel_initializer=tf.random_normal_initializer(stddev=.1)),
+            # tf.keras.layers.BatchNormalization(),
+            # tf.keras.layers.Conv2D(3, 16, data_format='channels_last',
+            #                        padding='SAME', activation='relu', kernel_initializer=tf.random_normal_initializer(stddev=.1)),
+            # tf.keras.layers.Conv2D(3, 8, data_format='channels_last',
+            #                        padding='SAME', activation='sigmoid', kernel_initializer=tf.random_normal_initializer(stddev=.1)),
         ])
 
         self.mu_layer = tf.keras.layers.Dense(latent_size)
@@ -167,7 +167,7 @@ class ConvVAE(tf.keras.Model):
     def train_step(self, data):
         x = data[0]
         with tf.GradientTape() as tape:
-            x_hat, mu, logvar, _ = self.call(x)
+            x_hat, mu, logvar, _ = self(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
