@@ -12,15 +12,15 @@ def get_chroma_from_midi(midi_path, verbose=False):
         print()
     mid = pm.PrettyMIDI(midi_path)
     BPM = mid.get_tempo_changes()[1][0]
-    sample_length = (60.0 / 4.0) / BPM
-    interval_end = 160.0 * sample_length
-    chroma_rolls = np.zeros((3, 12, 160))
+    sample_length = (60.0 / 8.0) / BPM
+    interval_end = 320.0 * sample_length
+    chroma_rolls = np.zeros((3, 12, 320))
     i = 0
     for instr in mid.instruments:
         if i > 2:
             break
         chroma_roll = instr.get_chroma(times=np.arange(0, interval_end, sample_length)).astype(bool) + 0
-        if chroma_roll.shape[1] == 161:
+        if chroma_roll.shape[1] == 321:
             chroma_roll = chroma_roll[:, :-1]
         if np.max(chroma_roll):
             chroma_rolls[i, :, :] = chroma_roll
@@ -32,7 +32,6 @@ def get_midi_from_chroma(chroma_rolls, tempo, verbose=False):
         print('Creating MIDI from tensor of shape {}'.format(chroma_rolls.shape))
 
     # Convert chroma rolls to bool
-    print(len(chroma_rolls))
     chroma_rolls = chroma_rolls > 0.5
 
     midi = pm.PrettyMIDI()
@@ -47,7 +46,7 @@ def get_midi_from_chroma(chroma_rolls, tempo, verbose=False):
 
     # Compute the length of a beat using the given tempo
     mins_per_beat = 1 / tempo
-    secs_per_4th_beat = mins_per_beat * (60 / 4)
+    secs_per_8th_beat = mins_per_beat * (60 / 8)
 
     for i in range(3):
         # Add all melodies back into the midi
@@ -65,11 +64,11 @@ def get_midi_from_chroma(chroma_rolls, tempo, verbose=False):
                     col += 1
                     continue
                 # Otherwise...
-                note_start = col * secs_per_4th_beat
+                note_start = col * secs_per_8th_beat
                
                 while col < melodies[i].shape[1] and melodies[i][row, col]:
                     col += 1
-                note_end = col * secs_per_4th_beat
+                note_end = col * secs_per_8th_beat
                 
                 if note_vel:
                     note = pm.Note(80, note_pitch + 12 * (i + 4), note_start, note_end)
@@ -91,7 +90,8 @@ if __name__ == '__main__':
 
     base_save_path = "chroma_rolls_batch_"
 
-    chroma_rolls = np.zeros((5000, 3, 12, 160)).astype(int)
+    # chroma_rolls = np.zeros((5000, 3, 12, 320)).astype(int)
+    chroma_rolls = []
     save_index = -1
     for n in range(0, len(midi_paths)):
         local_n = (n % 5000)
@@ -101,14 +101,14 @@ if __name__ == '__main__':
             path = midi_paths[n]
             mid = pm.PrettyMIDI(path)
             BPM = mid.get_tempo_changes()[1][0]
-            sample_length = (60.0 / 4.0) / BPM
-            interval_end = 160.0 * sample_length
+            sample_length = (60.0 / 8.0) / BPM
+            interval_end = 320.0 * sample_length
             i = 0
             for instr in mid.instruments:
                 if i > 2:
                     break
                 chroma_roll = instr.get_chroma(times=np.arange(0, interval_end, sample_length)).astype(bool) + 0
-                if chroma_roll.shape[1] == 161:
+                if chroma_roll.shape[1] == 321:
                     chroma_roll = chroma_roll[:, :-1]
                 if np.max(chroma_roll):
                     chroma_rolls[local_n, i, :, :] = chroma_roll
@@ -121,7 +121,7 @@ if __name__ == '__main__':
             np.save(save_path, chroma_rolls)
             sleep(2)
             print("NextBatch")
-            chroma_rolls = np.zeros((5000, 3, 12, 160)).astype(int)
+            chroma_rolls = np.zeros((5000, 3, 12, 320)).astype(int)
 
     chroma_rolls_all = None
     for i in range(0, 17):

@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 class VAE(tf.keras.Model):
-    def __init__(self, instrument_units, pitch_units, song_length, learning_rate, hidden_dim=256,latent_size=15, epochs=1):
+    def __init__(self, instrument_units, pitch_units, song_length, learning_rate, latent_size=256, hidden_dim=256,epochs=1):
         super(VAE, self).__init__()
         self.epochs = epochs
         self.latent_size = latent_size
@@ -40,12 +40,30 @@ class VAE(tf.keras.Model):
         ])
         self.optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
         self.loss_tracker = tf.keras.metrics.Mean(name='loss')
+        self.recon_loss_tracker = tf.keras.metrics.Mean(name='recon. loss')
+        self.kld_loss_tracker = tf.keras.metrics.Mean(name='kld loss')
+
+
+    def get_latent_encoding(self, x):
+        """
+        Returns latent encoding of input
+        Inputs:
+        - x: a batch of input chroma
+        Returns:
+        - z: batch of latent encodings of input created by encoder and reparameterization
+        """
+        latent = self.encoder(x)
+        mu = self.mu_layer(latent)
+        logvar = self.logvar_layer(latent)
+        z = self.reparametrize(mu, logvar)
+        return z
+    
 
     def call(self, x):
         """    
+        Runs a forward pass of the entire vae
         Inputs:
-        - x: Batch of input images of shape (N, 1, H, W)
-        
+        - x: Batch of input chroma of shape (N, 1, H, W)    
         Returns:
         - x_hat: Reconstruced input data of shape (N,1,H,W)
         - mu: Matrix representing estimated posterior mu (N, Z), with Z latent space dimension
@@ -56,9 +74,17 @@ class VAE(tf.keras.Model):
         logvar = self.logvar_layer(latent)
         z = self.reparametrize(mu, logvar)
         x_hat = self.decoder(z)
-        return x_hat, mu, logvar
+        return x_hat, mu, logvar, z
     
+
     def predict(self, x):
+        """
+        Runs a forward pass on the data but only returns reconstructions
+        Inputs:
+        - x: Batch of input chroma of shape (N, 1, H, W)    
+        Returns:
+        - x_hat: Reconstruced input data of shape (N,1,H,W)
+        """
         latent = self.encoder(x)
         mu = self.mu_layer(latent)
         logvar = self.logvar_layer(latent)
@@ -66,6 +92,7 @@ class VAE(tf.keras.Model):
         x_hat = self.decoder(z)
         return x_hat
     
+
     def reparametrize(self, mu, logvar):
         """
         Differentiably sample random Gaussian data with specified mean and variance using the
@@ -79,13 +106,8 @@ class VAE(tf.keras.Model):
         - z: Estimated latent vectors, where z[i, j] is a random value sampled from a Gaussian with
             mean mu[i, j] and log-variance logvar[i, j].
         """
-        # if mu.shape[0] == None:
-        #     print("HACK")
-        #     batch_size = int(mu.shape[1] / 32)
-        #     mu = tf.reshape(mu, [batch_size,32])
-        #     logvar = tf.reshape(logvar,[batch_size,32])
         std_dev = tf.math.sqrt(tf.math.exp(logvar))
-        z = mu + tf.random.normal(shape=std_dev.shape) * std_dev
+        z = mu + tf.random.normal(shape=tf.shape(std_dev)) * std_dev
         return z
 
 
@@ -106,6 +128,7 @@ class VAE(tf.keras.Model):
         )
         reconstruction_loss = bce_fn(x, x_hat) * x.shape[
             -1]  # Sum over all loss terms for each data point. This looks weird, but we need this to work...
+        self.recon_loss_tracker.update_state(reconstruction_loss/x.shape[0])
         return reconstruction_loss
 
 
@@ -125,6 +148,7 @@ class VAE(tf.keras.Model):
         """
         variance = tf.math.exp(logvar)
         kl_loss = -.5 * tf.math.reduce_sum((1 + logvar - tf.square(mu) - variance))
+        self.kld_loss_tracker.update_state(kl_loss)
         loss = self.bce_function(x_hat, x) + kl_loss
         loss /= x.shape[0]
         return loss
@@ -132,9 +156,12 @@ class VAE(tf.keras.Model):
     def train_step(self, data):
         x = data[0]
         with tf.GradientTape() as tape:
-            x_hat, mu, logvar = self.call(x)
+            x_hat, mu, logvar, _ = self.call(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         self.loss_tracker.update_state(loss)
-        return {'loss':self.loss_tracker.result()}
+        return {'loss':self.loss_tracker.result(),
+                'recon. loss':self.recon_loss_tracker.result(),
+                'kl loss':self.kld_loss_tracker.result()
+                }
