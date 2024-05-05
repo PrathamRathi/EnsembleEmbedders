@@ -66,7 +66,7 @@ class VAE(tf.keras.Model):
         logvar = self.logvar_layer(latent)
         z = self.reparametrize(mu, logvar)
         x_hat = self.decoder(z)
-        return x_hat, mu, logvar
+        return x_hat, mu, logvar, z
     
 
     def predict(self, x):
@@ -146,7 +146,7 @@ class VAE(tf.keras.Model):
     def train_step(self, data):
         x = data[0]
         with tf.GradientTape() as tape:
-            x_hat, mu, logvar = self.call(x)
+            x_hat, mu, logvar, _ = self.call(x)
             loss = self.loss_function(x_hat, x, mu, logvar)
         grads = tape.gradient(loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
