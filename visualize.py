@@ -166,12 +166,14 @@ if __name__ == "__main__":
     test_midi_file1 = 'data/africa.mid'
     test_midi_file2 = 'data/wake_me_up.mid'
     test_midi_file3 = 'data/fly_me_to_the_moon.mid'
+    test_midi_file4 = 'data/major.mid'
+    test_midi_file5 = 'data/minor.mid'
 
     # predict_and_write_midi(model, test_midi_file0, 'dq')
     # predict_and_write_midi(model, test_midi_file1, 'toto')
-    # predict_and_write_midi(model, test_midi_file0)
-    # predict_and_write_midi(model, test_midi_file1)
+    predict_and_write_midi(model, test_midi_file4)
+    predict_and_write_midi(model, test_midi_file5)
 
-    # interpolate_by_average(model,test_midi_file0, test_midi_file1, .5)
-    # interpolate_by_steps(model,test_midi_file0, test_midi_file1, 20)
-    print(metrics('preprocessed/chroma_rolls_batch_0.npy'))
+    interpolate_by_average(model, test_midi_file4, test_midi_file5, .5)
+    interpolate_by_steps(model, test_midi_file4, test_midi_file5, 10)
+    # print(metrics('preprocessed/chroma_rolls_batch_0.npy'))
