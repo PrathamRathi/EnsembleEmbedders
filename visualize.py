@@ -10,7 +10,7 @@ import argparse
 import json
 import pprint
 
-INFERENCE_DIR = 'inference/'
+INFERENCE_DIR = 'gif/'
 ORIGINAL = '-original.mid'
 RECONSTRUCTED = '-model-reconstructed.mid'
 
@@ -27,7 +27,7 @@ def get_latent_encoding(model, chroma)->tf.Tensor:
     # return tf.squeeze(latent_encoding, 0)
     return latent_encoding
 
-def interpolate_by_average(model, file0, file1, weight, name):
+def interpolate_by_average(model, file0, file1, weight):
     """
     Generate interpolation between two midi files by taking a weighted average of latent encodings
     Inputs:
@@ -38,6 +38,9 @@ def interpolate_by_average(model, file0, file1, weight, name):
     - name: base name of the midi file
     Returns: a tensor that is of the same shape as model output with steps number as the batch size
     """
+    name0 = file0.split('/')[-1].split('.')[0]
+    name1 = file1.split('/')[-1].split('.')[0]
+    name = name0 + name1 + '.mid'
     chroma0 = get_chroma_from_midi(file0)
     chroma1 = get_chroma_from_midi(file1)
     z0 = get_latent_encoding(model,chroma0)
@@ -47,7 +50,7 @@ def interpolate_by_average(model, file0, file1, weight, name):
     chroma_to_file(x, INFERENCE_DIR + 'average-' + name)
     return x
 
-def interpolate_by_steps(model, file0, file1, steps, name):
+def interpolate_by_steps(model, file0, file1, steps):
     """
     Generate interpolation between two midi files by going step by step
     Inputs:
@@ -57,6 +60,9 @@ def interpolate_by_steps(model, file0, file1, steps, name):
     - name: base name of the midi file
     Returns: a tensor that is of the same shape as model output with steps number as the batch size
     """
+    name0 = file0.split('/')[-1].split('.')[0]
+    name1 = file1.split('/')[-1].split('.')[0]
+    name = name0 + name1 + '.mid'
     chroma0 = get_chroma_from_midi(file0)
     chroma1 = get_chroma_from_midi(file1)
     z0 = get_latent_encoding(model,chroma0)
@@ -88,7 +94,7 @@ def chroma_to_file(chroma, file_path):
     plt.savefig(fname=INFERENCE_DIR + basename)
     midi.write(file_path)
 
-def predict_and_write_midi(model, midi_file, name):
+def predict_and_write_midi(model, midi_file):
     """
     Gets model inference given a midi file and writes original midi and reconstructed midi
     Inputs:
@@ -96,6 +102,7 @@ def predict_and_write_midi(model, midi_file, name):
     - midi_file: a string that is the path to the midi file of choice
     - name: a string that will be prepended to the written midi files
     """
+    name = midi_file.split('/')[-1].split('.')[0]
     chroma = get_chroma_from_midi(midi_file)
     chroma_to_file(chroma, INFERENCE_DIR + name + ORIGINAL)
     chroma_batch = np.expand_dims(chroma, 0).astype(np.int32)
@@ -143,15 +150,15 @@ if __name__ == "__main__":
     print("KL loss: {}".format(losses[2]))
     print()
 
-    test_midi_file0 = 'data/Dancing Queen.mid'
+    test_midi_file0 = 'data/dancing_queen.mid'
     test_midi_file1 = 'data/africa.mid'
     test_midi_file2 = 'data/wake_me_up.mid'
-    test_midi_file3 = 'data/fix_you.mid'
+    test_midi_file3 = 'data/fly_me_to_the_moon.mid'
 
     # predict_and_write_midi(model, test_midi_file0, 'dq')
     # predict_and_write_midi(model, test_midi_file1, 'toto')
-    predict_and_write_midi(model, test_midi_file2, 'wake_me_up')
-    predict_and_write_midi(model, test_midi_file3, 'fix_you')
+    predict_and_write_midi(model, test_midi_file0)
+    predict_and_write_midi(model, test_midi_file1)
 
-    interpolate_by_average(model,test_midi_file2, test_midi_file3, .5, 'wakemeup-fixyou.mid')
-    # interpolate_by_steps(model,test_midi_file0, test_midi_file1, 3, 'dq-toto.mid')
+    interpolate_by_average(model,test_midi_file0, test_midi_file1, .5)
+    interpolate_by_steps(model,test_midi_file0, test_midi_file1, 20)
