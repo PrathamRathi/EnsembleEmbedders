@@ -133,6 +133,19 @@ def get_losses_from_history(model_path):
     best_KL_loss = d['kl loss'][-1]
     return best_loss, best_reconstruction_loss, best_KL_loss
 
+def metrics(batch_path):
+    true_data = np.load(batch_path)
+    true_data = tf.transpose(true_data, perm=[0, 2, 3, 1]).numpy()
+    pred = model(true_data)[0]
+    pred = pred.numpy()
+    pred = pred > .5
+    pred = pred.astype(np.int32)
+    mse = np.mean(np.square(true_data - pred))
+    correct_predictions = np.sum(true_data == pred)
+    total_predictions = true_data.size
+    acc= correct_predictions / total_predictions
+    return mse, acc
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", type=str, help = "pitches or chroma", default="chroma")
@@ -163,8 +176,9 @@ if __name__ == "__main__":
 
     # predict_and_write_midi(model, test_midi_file0, 'dq')
     # predict_and_write_midi(model, test_midi_file1, 'toto')
-    predict_and_write_midi(model, test_midi_file0)
-    predict_and_write_midi(model, test_midi_file1)
+    # predict_and_write_midi(model, test_midi_file0)
+    # predict_and_write_midi(model, test_midi_file1)
 
-    interpolate_by_average(model,test_midi_file0, test_midi_file1, .5)
-    interpolate_by_steps(model,test_midi_file0, test_midi_file1, 5)
+    # interpolate_by_average(model,test_midi_file0, test_midi_file1, .5)
+    # interpolate_by_steps(model,test_midi_file0, test_midi_file1, 5)
+    print(metrics('preprocessed/chroma_rolls_batch_0.npy'))
