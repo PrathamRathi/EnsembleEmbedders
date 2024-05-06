@@ -136,8 +136,7 @@ def get_losses_from_history(model_path):
 def metrics(batch_path):
     true_data = np.load(batch_path)
     true_data = tf.transpose(true_data, perm=[0, 2, 3, 1]).numpy()
-    pred = model(true_data)[0]
-    pred = pred.numpy()
+    pred = model(true_data)[0].numpy()
     pred = pred > .5
     pred = pred.astype(np.int32)
     mse = np.mean(np.square(true_data - pred))
