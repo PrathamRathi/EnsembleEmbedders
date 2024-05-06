@@ -171,9 +171,9 @@ if __name__ == "__main__":
 
     # predict_and_write_midi(model, test_midi_file0, 'dq')
     # predict_and_write_midi(model, test_midi_file1, 'toto')
-    predict_and_write_midi(model, test_midi_file4)
-    predict_and_write_midi(model, test_midi_file5)
+    # predict_and_write_midi(model, test_midi_file0)
+    predict_and_write_midi(model, test_midi_file2)
 
-    interpolate_by_average(model, test_midi_file4, test_midi_file5, .5)
-    interpolate_by_steps(model, test_midi_file4, test_midi_file5, 10)
-    # print(metrics('preprocessed/chroma_rolls_batch_0.npy'))
+    # interpolate_by_average(model, test_midi_file4, test_midi_file0, .5)
+    # interpolate_by_steps(model, test_midi_file4, test_midi_file1, 10)
+    print(metrics('preprocessed/chroma_rolls_batch_0.npy'))

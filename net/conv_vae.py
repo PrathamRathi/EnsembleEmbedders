@@ -27,7 +27,7 @@ class ConvVAE(tf.keras.Model):
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Conv2D(16, 8, (1,4), **conv_kwargs),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Conv2D(64, 4, 1, **conv_kwargs),
+            tf.keras.layers.Conv2D(32, 4, 1, **conv_kwargs),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(hidden_dim)
