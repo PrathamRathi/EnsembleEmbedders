@@ -7,6 +7,9 @@ import random
 def name2num(name):
     return pm.instrument_name_to_program(name)
 
+def num2class(n):
+    return pm.program_to_instrument_class(n)
+
 def get_chroma_from_midi(midi_path, verbose=False):
     if verbose:
         print("Extracting chroma from midi file: {}".format(midi_path))
@@ -86,6 +89,8 @@ if __name__ == '__main__':
     # print('chroma_rolls.shape: {}'.format(chroma_rolls.shape))
     # midi = get_midi_from_chroma(chroma_rolls, 120)
     # midi.write('dancing-queen-from-chroma.mid')
+    MELODY_HARMONY_INSTRUMENTS = ['Piano', 'Synth Lead', 'Guitar', 'Brass', 'Organ']
+    BASS_INSTRUMENTS = ['Bass']
 
     midi_paths = np.load("midi_paths.npy")
     print("MidiPathsArrayShape:", midi_paths.shape)
@@ -106,12 +111,33 @@ if __name__ == '__main__':
             sample_length = (60.0 / 8.0) / BPM
             interval_end = 320.0 * sample_length
             i = 0
+            # Evan, I think we can try to do this in a slightly inefficient way--cuz
+            #    hopefully it'll still be fast enough to run overnight.
+
+            # Try to get a melody, harmony, and bass instrument
+            candidate_melody_harmony_instruments = [instr for instr in mid.instruments if num2class(instr.program) in MELODY_HARMONY_INSTRUMENTS]
+            candidate_bass_instruments = [instr for instr in mid.instruments if num2class(instr.program) in BASS_INSTRUMENTS]
+
+            # Use the highest melody_harmony instrument as the melody
+            highest = None
+            for instr in candidate_melody_harmony_instruments:
+                pass
+                # TODO: Get highest instrument
+
+            # Use a random (different) melody_harmony instrument as the harmony
+            # TODO: Remove the instrument picked as the melody, then choose a random instrument
+
+            # Use a random bass instrument as the bass
+            # TODO: Use random candidate bass instrument
+
+            # If we still don't have 3 instruments, look through the rest and take anything that works
             for instr in mid.instruments:
                 if i > 2:
                     break
                 chroma_roll = instr.get_chroma(times=np.arange(0, interval_end, sample_length)).astype(bool) + 0
                 if chroma_roll.shape[1] == 321:
                     chroma_roll = chroma_roll[:, :-1]
+                # If the instrument has notes, add it
                 if np.max(chroma_roll):
                     chroma_rolls[local_n, i, :, :] = chroma_roll
                     i += 1
